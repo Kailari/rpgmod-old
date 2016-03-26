@@ -19,7 +19,6 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
-import org.apache.commons.lang3.Validate;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -83,7 +82,6 @@ public class CharacterAttributes implements ICharacterAttributes {
 
 	private final Map<Attribute, AttributeInstance> attributes;
 	private final EntityPlayer player;
-	private final ICharacterStats stats;
 
 	public CharacterAttributes(EntityPlayer player) {
 		this.attributes = new HashMap<Attribute, AttributeInstance>();
@@ -92,10 +90,6 @@ public class CharacterAttributes implements ICharacterAttributes {
 		for (Attribute attribute : AttributeRegistry.getAll()) {
 			this.attributes.put(attribute, new AttributeInstance(0, 0));
 		}
-
-		// Player must have stats capability for attributes to work.
-		this.stats = CapHelper.getCapability(player, Capabilities.CAPABILITY_STATS);
-		Validate.notNull(this.stats);
 	}
 
 	private boolean setInternal(Attribute attribute, int xp, int bonus) {
@@ -112,7 +106,7 @@ public class CharacterAttributes implements ICharacterAttributes {
 		// Update attribute level. Modifiers to stats are applied here.
 		updateLevel(
 				attribute,
-				this.stats,
+				CapHelper.getCapability(player, Capabilities.STATS),
 				newLevel + bonus,
 				instance.getLevel() + instance.getBonus());
 

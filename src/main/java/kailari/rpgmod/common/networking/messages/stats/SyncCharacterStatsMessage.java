@@ -105,7 +105,7 @@ public class SyncCharacterStatsMessage implements IMessage {
 
 					EntityPlayer player = RPGMod.proxy.getPlayerEntity(ctx);
 
-					CharacterStats stats = (CharacterStats) CapHelper.getCapability(player, Capabilities.CAPABILITY_STATS);
+					CharacterStats stats = (CharacterStats) CapHelper.getCapability(player, Capabilities.STATS);
 
 					if (stats != null) {
 						for (int variableIndex = 0; variableIndex < message.nbtTags.length; variableIndex++) {

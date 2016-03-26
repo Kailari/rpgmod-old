@@ -6,9 +6,7 @@ import kailari.rpgmod.api.common.stats.attributes.ICharacterAttributes;
 import kailari.rpgmod.common.stats.CapabilityCharacterStats;
 import kailari.rpgmod.common.stats.ProviderCharacterStats;
 import kailari.rpgmod.common.stats.attributes.CapabilityCharacterAttributes;
-import kailari.rpgmod.common.stats.attributes.CharacterAttributes;
 import kailari.rpgmod.common.stats.attributes.ProviderCharacterAttributes;
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
@@ -27,12 +25,12 @@ public class Capabilities {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	@CapabilityInject(ICharacterStats.class)
-	public static Capability<ICharacterStats> CAPABILITY_STATS = null;
-	public static final ResourceLocation CAPABILITY_STATS_ID = new ResourceLocation(RPGMod.MODID, "CharacterStats");
+	public static Capability<ICharacterStats> STATS = null;
+	public static final ResourceLocation STATS_ID = new ResourceLocation(RPGMod.MODID, "CharacterStats");
 
 	@CapabilityInject(ICharacterAttributes.class)
-	public static Capability<ICharacterAttributes> CAPABILITY_ATTRIBUTES = null;
-	public static final ResourceLocation CAPABILITY_ATTRIBUTES_ID = new ResourceLocation(RPGMod.MODID, "CharacterAttributes");
+	public static Capability<ICharacterAttributes> ATTRIBUTES = null;
+	public static final ResourceLocation ATTRIBUTES_ID = new ResourceLocation(RPGMod.MODID, "CharacterAttributes");
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -60,8 +58,8 @@ public class Capabilities {
 			if (event.getEntity() instanceof EntityPlayer) {
 				EntityPlayer player = (EntityPlayer) event.getEntity();
 
-				event.addCapability(CAPABILITY_STATS_ID, new ProviderCharacterStats(player));
-				event.addCapability(CAPABILITY_ATTRIBUTES_ID, new ProviderCharacterAttributes(player));
+				event.addCapability(STATS_ID, new ProviderCharacterStats(player));
+				event.addCapability(ATTRIBUTES_ID, new ProviderCharacterAttributes(player));
 			}
 		}
 	}

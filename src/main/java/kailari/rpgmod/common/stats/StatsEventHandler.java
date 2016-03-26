@@ -38,6 +38,7 @@ import net.minecraftforge.common.IPlantable;
 import net.minecraftforge.event.brewing.PotionBrewEvent;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
+import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.living.LivingExperienceDropEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.AnvilRepairEvent;
@@ -137,7 +138,7 @@ public class StatsEventHandler {
 	}
 	
 	private void injectEntityAttributeChanges(EntityPlayer player) {
-		ICharacterStats stats = CapHelper.getCapability(player, Capabilities.CAPABILITY_STATS);
+		ICharacterStats stats = CapHelper.getCapability(player, Capabilities.STATS);
 		
 		if (stats != null) {
 			player.getEntityAttribute(SharedMonsterAttributes.MAX_HEALTH)
@@ -147,12 +148,12 @@ public class StatsEventHandler {
 	
 	private void tryDoSync(EntityPlayer player) {
 		if (!player.worldObj.isRemote) {
-			CharacterStats stats = (CharacterStats) CapHelper.getCapability(player, Capabilities.CAPABILITY_STATS);
+			CharacterStats stats = (CharacterStats) CapHelper.getCapability(player, Capabilities.STATS);
 			
 			if (stats != null) {
 				stats.doFullSync();
 
-				CharacterAttributes attrs = (CharacterAttributes) CapHelper.getCapability(player, Capabilities.CAPABILITY_ATTRIBUTES);
+				CharacterAttributes attrs = (CharacterAttributes) CapHelper.getCapability(player, Capabilities.ATTRIBUTES);
 
 				if (attrs != null) {
 					attrs.doFullSync();
@@ -185,8 +186,8 @@ public class StatsEventHandler {
 		}
 		
 		// Get stats for copying
-		ICharacterStats originalStats = CapHelper.getCapability(event.getOriginal(), Capabilities.CAPABILITY_STATS);
-		ICharacterStats cloneStats = CapHelper.getCapability(event.getEntityPlayer(), Capabilities.CAPABILITY_STATS);
+		ICharacterStats originalStats = CapHelper.getCapability(event.getOriginal(), Capabilities.STATS);
+		ICharacterStats cloneStats = CapHelper.getCapability(event.getEntityPlayer(), Capabilities.STATS);
 		
 		if (originalStats != null && cloneStats != null) {
 			
@@ -198,8 +199,8 @@ public class StatsEventHandler {
 
 
 			// Copy attributes to the clone
-			ICharacterAttributes originalAttrs = CapHelper.getCapability(event.getOriginal(), Capabilities.CAPABILITY_ATTRIBUTES);
-			ICharacterAttributes cloneAttrs = CapHelper.getCapability(event.getOriginal(), Capabilities.CAPABILITY_ATTRIBUTES);
+			ICharacterAttributes originalAttrs = CapHelper.getCapability(event.getOriginal(), Capabilities.ATTRIBUTES);
+			ICharacterAttributes cloneAttrs = CapHelper.getCapability(event.getOriginal(), Capabilities.ATTRIBUTES);
 			
 			if (originalAttrs != null && cloneAttrs != null) {
 				
@@ -254,16 +255,16 @@ public class StatsEventHandler {
 			EntityPlayer attacker = (EntityPlayer) attackerEntity;
 
 			// Make sure that damage source entity has stat capabilities
-			ICharacterStats attackerStats = CapHelper.getCapability(attacker, Capabilities.CAPABILITY_STATS);
+			ICharacterStats attackerStats = CapHelper.getCapability(attacker, Capabilities.STATS);
 			
 			if (attackerStats != null) {
 				
-				ICharacterAttributes attackerAttrs = CapHelper.getCapability(attacker, Capabilities.CAPABILITY_ATTRIBUTES);
+				ICharacterAttributes attackerAttrs = CapHelper.getCapability(attacker, Capabilities.ATTRIBUTES);
 				ICharacterAttributes targetAttrs = null;
 				
-				ICharacterStats targetStats = CapHelper.getCapability(event.getEntity(), Capabilities.CAPABILITY_STATS);
+				ICharacterStats targetStats = CapHelper.getCapability(event.getEntity(), Capabilities.STATS);
 				if (targetStats != null) {
-					targetAttrs = CapHelper.getCapability(event.getEntity(), Capabilities.CAPABILITY_ATTRIBUTES);
+					targetAttrs = CapHelper.getCapability(event.getEntity(), Capabilities.ATTRIBUTES);
 				}
 				
 				// Ranged damage
@@ -368,14 +369,14 @@ public class StatsEventHandler {
 		if (entity != null && entity instanceof EntityPlayer) {
 			
 			// Make sure that damage source entity has stat capabilities
-			ICharacterStats attackerStats = CapHelper.getCapability(entity, Capabilities.CAPABILITY_STATS);
+			ICharacterStats attackerStats = CapHelper.getCapability(entity, Capabilities.STATS);
 			
 			if (attackerStats != null) {
 
 				float targetEvasion = 0.0f;
 				
 				// If targeted entity has stat capabilities, adjust evasion accordingly
-				ICharacterStats targetStats = CapHelper.getCapability(event.getEntity(), Capabilities.CAPABILITY_STATS);
+				ICharacterStats targetStats = CapHelper.getCapability(event.getEntity(), Capabilities.STATS);
 				
 				if (targetStats != null) {
 					targetEvasion = targetStats.get(Stats.EVASION);
@@ -388,11 +389,11 @@ public class StatsEventHandler {
 					int amount = Math.round(event.getAmount());
 
 					// Grant dodging exp to target
-					ICharacterAttributes targetAttrs = CapHelper.getCapability(event.getEntity(), Capabilities.CAPABILITY_ATTRIBUTES);
+					ICharacterAttributes targetAttrs = CapHelper.getCapability(event.getEntity(), Capabilities.ATTRIBUTES);
 					grantTargetDodgingXP(targetAttrs, event.getSource(), amount);
 					
 					// Grant missing xp to attacker
-					ICharacterAttributes attackerAttrs = CapHelper.getCapability(entity, Capabilities.CAPABILITY_ATTRIBUTES);
+					ICharacterAttributes attackerAttrs = CapHelper.getCapability(entity, Capabilities.ATTRIBUTES);
 					grantAttackerMissingXP(attackerAttrs, event.getSource(), amount);
 					
 					RPGMod.logger.info("Attack missed!");
@@ -461,7 +462,7 @@ public class StatsEventHandler {
 		EntityPlayer player = event.getAttackingPlayer();
 		
 		// We can't add xp to player if it doesn't support attributes
-		ICharacterAttributes attackerAttributes = CapHelper.getCapability(player, Capabilities.CAPABILITY_ATTRIBUTES);
+		ICharacterAttributes attackerAttributes = CapHelper.getCapability(player, Capabilities.ATTRIBUTES);
 		
 		if (attackerAttributes != null) {
 			
@@ -521,7 +522,7 @@ public class StatsEventHandler {
 		
 		EntityPlayer player = event.getPlayer();
 		
-		ICharacterAttributes attributes = CapHelper.getCapability(player, Capabilities.CAPABILITY_ATTRIBUTES);
+		ICharacterAttributes attributes = CapHelper.getCapability(player, Capabilities.ATTRIBUTES);
 		
 		if (attributes != null) {
 
@@ -590,7 +591,7 @@ public class StatsEventHandler {
 	public void onPlayerEvent(PlayerEvent.BreakSpeed event) {
 		
 		// We can't apply stats if they don't exist
-		ICharacterStats stats = CapHelper.getCapability(event.getEntity(), Capabilities.CAPABILITY_STATS);
+		ICharacterStats stats = CapHelper.getCapability(event.getEntity(), Capabilities.STATS);
 		if (stats != null) {
 			
 			ItemStack equippedStack = event.getEntityPlayer().getActiveItemStack();
@@ -663,7 +664,7 @@ public class StatsEventHandler {
 			return;
 		}
 
-		ICharacterStats stats = CapHelper.getCapability(event.getEntity(), Capabilities.CAPABILITY_STATS);
+		ICharacterStats stats = CapHelper.getCapability(event.getEntity(), Capabilities.STATS);
 		if (stats == null) {
 			return;
 		}
@@ -672,7 +673,7 @@ public class StatsEventHandler {
 		event.setBreakChance((event.getBreakChance() + stats.get(Stats.ANVIL_BREAK_CHANCE_BONUS)) * stats.get(Stats.ANVIL_BREAK_CHANCE_MULT));
 
 		// Grant xp from anvil operating if attributes capability is available
-		ICharacterAttributes attributes = CapHelper.getCapability(event.getEntity(), Capabilities.CAPABILITY_ATTRIBUTES);
+		ICharacterAttributes attributes = CapHelper.getCapability(event.getEntity(), Capabilities.ATTRIBUTES);
 		if (attributes == null) {
 			return;
 		}
@@ -752,7 +753,7 @@ public class StatsEventHandler {
 			return;
 		}
 		
-		ICharacterAttributes attributes = CapHelper.getCapability(event.player, Capabilities.CAPABILITY_ATTRIBUTES);
+		ICharacterAttributes attributes = CapHelper.getCapability(event.player, Capabilities.ATTRIBUTES);
 		if (attributes == null) {
 			return;
 		}
@@ -791,7 +792,7 @@ public class StatsEventHandler {
 		}
 
 		// We can't grant xp if there are no attribute capability on the player
-		ICharacterAttributes attributes = CapHelper.getCapability(event.player, Capabilities.CAPABILITY_ATTRIBUTES);
+		ICharacterAttributes attributes = CapHelper.getCapability(event.player, Capabilities.ATTRIBUTES);
 		if (attributes != null) {
 
 			boolean incompatibleItemFound = false;
@@ -880,7 +881,7 @@ public class StatsEventHandler {
 		for (EntityPlayerMP player : players) {
 			
 			// 2.1. Make sure the player has attribute capabilities
-			ICharacterAttributes attributes = CapHelper.getCapability(player, Capabilities.CAPABILITY_ATTRIBUTES);
+			ICharacterAttributes attributes = CapHelper.getCapability(player, Capabilities.ATTRIBUTES);
 			
 			// Calculate region inside which to grant XP
 			int minX = player.getPosition().getX() - BREWING_STAND_XP_RADIUS;
@@ -927,7 +928,7 @@ public class StatsEventHandler {
 			return;
 		}
 		
-		ICharacterAttributes attributes = CapHelper.getCapability(event.getEntity(), Capabilities.CAPABILITY_ATTRIBUTES);
+		ICharacterAttributes attributes = CapHelper.getCapability(event.getEntity(), Capabilities.ATTRIBUTES);
 		
 		if (attributes != null) {
 			AttributeXPSources.Farming.TILLING.grantXP(attributes);
@@ -954,7 +955,7 @@ public class StatsEventHandler {
 			return;
 		}
 		
-		ICharacterAttributes attributes = CapHelper.getCapability(event.getEntity(), Capabilities.CAPABILITY_ATTRIBUTES);
+		ICharacterAttributes attributes = CapHelper.getCapability(event.getEntity(), Capabilities.ATTRIBUTES);
 		
 		if (attributes != null) {
 			AttributeXPSources.Farming.FERTILIZING.grantXP(attributes);
@@ -981,7 +982,7 @@ public class StatsEventHandler {
 			return;
 		}
 		
-		ICharacterAttributes attributes = CapHelper.getCapability(event.getPlayer(), Capabilities.CAPABILITY_ATTRIBUTES);
+		ICharacterAttributes attributes = CapHelper.getCapability(event.getPlayer(), Capabilities.ATTRIBUTES);
 		
 		if (attributes != null) {
 
@@ -1016,42 +1017,43 @@ public class StatsEventHandler {
 	@SubscribeEvent
 	public void onPlayerTick(TickEvent.PlayerTickEvent event) {
 		// Only handle these on the server
-		if (event.player.getEntityWorld().isRemote) {
+		if (event.player.getEntityWorld().isRemote || event.phase == TickEvent.Phase.END) {
 			return;
 		}
 
 		EntityPlayer player = event.player;
 
 		// Get attributes and stats for targeted player
-		ICharacterAttributes attributes = CapHelper.getCapability(player, Capabilities.CAPABILITY_ATTRIBUTES);
-		CharacterStats stats = (CharacterStats) CapHelper.getCapability(player, Capabilities.CAPABILITY_STATS);
+		ICharacterAttributes attributes = CapHelper.getCapability(player, Capabilities.ATTRIBUTES);
+		CharacterStats stats = (CharacterStats) CapHelper.getCapability(player, Capabilities.STATS);
+		if (stats == null || attributes == null) {
+			return;
+		}
 
-		if (stats != null && attributes != null) {
+		IAttributeInstance vanillaMoveSpeedAttr = player.getEntityAttribute(SharedMonsterAttributes.MOVEMENT_SPEED);
+		vanillaMoveSpeedAttr.setBaseValue(stats.get(Stats.MOVEMENT_SPEED));
 
-			IAttributeInstance vanillaAttribute = player.getEntityAttribute(SharedMonsterAttributes.MOVEMENT_SPEED);
+		// If player just started sprinting, apply modifier
+		if (player.isSprinting() && !stats.wasSprinting()) {
+			addSprintModifier(vanillaMoveSpeedAttr, stats);
+		}
+		// if player just stopped sprinting, remove modifier
+		else if (!player.isSprinting() && stats.wasSprinting()) {
+			// We do not have exact instance, so remove by UUID
+			vanillaMoveSpeedAttr.removeModifier(sprintSpeedModifierUUID);
+			stats.setWasSprinting(false);
+		}
 
-			// If player just started sprinting, apply modifier
-			if (player.isSprinting() && !stats.wasSprinting()) {
-				addSprintModifier(vanillaAttribute, stats);
-			}
-			// if player just stopped sprinting, remove modifier
-			else if (!player.isSprinting() && stats.wasSprinting()) {
-				// We do not have exact instance, so remove by UUID
-				vanillaAttribute.removeModifier(sprintSpeedModifierUUID);
-				stats.setWasSprinting(false);
-			}
+		// Distance to last position where we granted XP
+		double distanceSq = player.getDistanceSq(stats.getPreviousDistanceXPPos());
 
-			// Distance to last position where we granted XP
-			double distanceSq = player.getDistanceSq(stats.getPreviousDistanceXPPos());
-
-			// If player has moved enough, grant XP
-			if (event.player.isSprinting() && distanceSq >= SPRINTING_XP_GRANT_DISTANCE) {
-				AttributeXPSources.Maneuvers.SPRINTING.grantXP(attributes);
-				stats.setPreviousDistanceXPPos(player.getPosition());
-			} else if (distanceSq >= WALKING_XP_GRANT_DISTANCE) {
-				AttributeXPSources.Maneuvers.WALKING.grantXP(attributes);
-				stats.setPreviousDistanceXPPos(player.getPosition());
-			}
+		// If player has moved enough, grant XP
+		if (event.player.isSprinting() && distanceSq >= SPRINTING_XP_GRANT_DISTANCE * SPRINTING_XP_GRANT_DISTANCE) {
+			AttributeXPSources.Maneuvers.SPRINTING.grantXP(attributes);
+			stats.setPreviousDistanceXPPos(player.getPosition());
+		} else if (distanceSq >= WALKING_XP_GRANT_DISTANCE * WALKING_XP_GRANT_DISTANCE) {
+			AttributeXPSources.Maneuvers.WALKING.grantXP(attributes);
+			stats.setPreviousDistanceXPPos(player.getPosition());
 		}
 	}
 
@@ -1065,5 +1067,43 @@ public class StatsEventHandler {
 		));
 
 		stats.setWasSprinting(true);
+	}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	TickEvent.PlayerTickEvent
+//  -------------------------
+//	Handles applying jump height bonuses based on player stats.
+//
+//	Executes at EventPriority.LOWEST to ensure that the event isn't cancelled.
+//
+//	Handles following XP sources:
+//	 - Maneuvers.JUMPING
+//	 - Maneuvers.JUMPING_WHILE_SPRINTING
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	@SubscribeEvent
+	public void onLivingJump(LivingEvent.LivingJumpEvent event) {
+		if (event.getEntity().worldObj.isRemote) {
+			//return;
+		}
+
+		// Get stats and attributes and ensure that entity is a player
+		ICharacterStats stats = CapHelper.getCapability(event.getEntity(), Capabilities.STATS);
+		ICharacterAttributes attributes = CapHelper.getCapability(event.getEntity(), Capabilities.ATTRIBUTES);
+		if (attributes == null || stats == null || !(event.getEntity() instanceof EntityPlayer)) {
+			return;
+		}
+
+		// TODO: Might require something bit more fancy
+		EntityPlayer player = (EntityPlayer) event.getEntity();
+		player.motionY += stats.get(Stats.JUMP_BONUS);
+
+		if (player.isSprinting()) {
+			AttributeXPSources.Maneuvers.JUMPING_WHILE_SPRINTING.grantXP(attributes);
+		} else {
+			AttributeXPSources.Maneuvers.JUMPING.grantXP(attributes);
+		}
 	}
 }

@@ -26,7 +26,9 @@ public final class Stats {
 
 	public static final StatVariable MOVEMENT_SPEED = new StatVariable("moveSpeed", 0.7f);
 
-	public static final StatVariable SPRINT_SPEED_MULT = new StatVariable("sprintMult", 1.5f);
+	public static final StatVariable SPRINT_SPEED_MULT = new StatVariable("sprintMult", 0.0f);
+
+	public static final StatVariable JUMP_BONUS = new StatVariable("jumpForceBonus", 0.0f);
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

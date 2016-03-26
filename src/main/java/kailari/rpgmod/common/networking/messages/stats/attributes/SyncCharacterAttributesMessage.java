@@ -102,7 +102,7 @@ public class SyncCharacterAttributesMessage implements IMessage {
 
 					EntityPlayer player = RPGMod.proxy.getPlayerEntity(ctx);
 
-					CharacterAttributes attrs = (CharacterAttributes) CapHelper.getCapability(player, Capabilities.CAPABILITY_ATTRIBUTES);
+					CharacterAttributes attrs = (CharacterAttributes) CapHelper.getCapability(player, Capabilities.ATTRIBUTES);
 
 					if (attrs != null) {
 						for (int index = 0; index < message.nbtTags.length; index++) {

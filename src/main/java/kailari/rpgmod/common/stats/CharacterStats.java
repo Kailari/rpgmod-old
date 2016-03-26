@@ -44,7 +44,9 @@ public class CharacterStats implements ICharacterStats {
 	}
 
 	public BlockPos getPreviousDistanceXPPos() {
-		return previousDistanceXPPos;
+		return this.previousDistanceXPPos == null
+				? (this.previousDistanceXPPos = this.player.getPosition())
+				: this.previousDistanceXPPos;
 	}
 
 

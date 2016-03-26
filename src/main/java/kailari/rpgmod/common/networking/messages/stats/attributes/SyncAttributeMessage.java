@@ -71,7 +71,7 @@ public class SyncAttributeMessage implements IMessage {
 				public void run() {
 
 					EntityPlayer player = RPGMod.proxy.getPlayerEntity(ctx);
-					CharacterAttributes stats = (CharacterAttributes) CapHelper.getCapability(player, Capabilities.CAPABILITY_ATTRIBUTES);
+					CharacterAttributes stats = (CharacterAttributes) CapHelper.getCapability(player, Capabilities.ATTRIBUTES);
 
 					if (stats != null) {
 						stats.receiveAttributeData(AttributeRegistry.get(message.nbtKey), message.xp, message.bonus);

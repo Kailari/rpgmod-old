@@ -19,20 +19,20 @@ public class ProviderCharacterAttributes implements ICapabilitySerializable<NBTT
 
 	@Override
 	public boolean hasCapability(Capability<?> capability, EnumFacing facing) {
-		return Capabilities.CAPABILITY_ATTRIBUTES != null && capability == Capabilities.CAPABILITY_ATTRIBUTES;
+		return Capabilities.ATTRIBUTES != null && capability == Capabilities.ATTRIBUTES;
 	}
 
 	@Override
 	@SuppressWarnings("unchecked")
 	public <T> T getCapability(Capability<T> capability, EnumFacing facing) {
-		return capability == Capabilities.CAPABILITY_ATTRIBUTES ? (T) this.attributes : null;
+		return capability == Capabilities.ATTRIBUTES ? (T) this.attributes : null;
 	}
 
 	@Override
 	public NBTTagCompound serializeNBT() {
-		if (Capabilities.CAPABILITY_ATTRIBUTES != null) {
-			return (NBTTagCompound) Capabilities.CAPABILITY_ATTRIBUTES.getStorage()
-					.writeNBT(Capabilities.CAPABILITY_ATTRIBUTES, this.attributes, null);
+		if (Capabilities.ATTRIBUTES != null) {
+			return (NBTTagCompound) Capabilities.ATTRIBUTES.getStorage()
+					.writeNBT(Capabilities.ATTRIBUTES, this.attributes, null);
 		} else {
 			return new NBTTagCompound();
 		}
@@ -40,9 +40,9 @@ public class ProviderCharacterAttributes implements ICapabilitySerializable<NBTT
 
 	@Override
 	public void deserializeNBT(NBTTagCompound compound) {
-		if (Capabilities.CAPABILITY_ATTRIBUTES != null) {
-			Capabilities.CAPABILITY_ATTRIBUTES.getStorage()
-					.readNBT(Capabilities.CAPABILITY_ATTRIBUTES, this.attributes, null, compound);
+		if (Capabilities.ATTRIBUTES != null) {
+			Capabilities.ATTRIBUTES.getStorage()
+					.readNBT(Capabilities.ATTRIBUTES, this.attributes, null, compound);
 		}
 	}
 }

@@ -54,7 +54,7 @@ public class FoodStats extends net.minecraft.util.FoodStats {
 	
 	private ICharacterStats getStats() {
 		if (this.cachedStats == null) {
-			this.cachedStats = CapHelper.getCapability(this.player, Capabilities.CAPABILITY_STATS);
+			this.cachedStats = CapHelper.getCapability(this.player, Capabilities.STATS);
 
 			if (this.cachedStats == null) {
 				throw new IllegalStateException("Player entity did not have required capabilities!");

@@ -68,7 +68,7 @@ public class SyncStatVariableMessage implements IMessage {
 				public void run() {
 
 					EntityPlayer player = RPGMod.proxy.getPlayerEntity(ctx);
-					CharacterStats stats = (CharacterStats) CapHelper.getCapability(player, Capabilities.CAPABILITY_STATS);
+					CharacterStats stats = (CharacterStats) CapHelper.getCapability(player, Capabilities.STATS);
 
 					if (stats != null) {
 						stats.receiveVariableData(StatRegistry.get(message.nbtKey), message.value);
