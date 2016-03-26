@@ -13,6 +13,8 @@ import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 
+// TODO: Initial-sync message containing both attribute, and stat-data. De-serialized stats first so that attribute values will override stat values properly (this assumes packet ordering is non-reliable)
+
 /**
  * Message for synchronizing CharacterAttributes variables (full re-sync)
  */
