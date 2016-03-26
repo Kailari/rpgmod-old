@@ -1,0 +1,16 @@
+[
+{
+  "modid": "rpgmod",
+  "name": "Kailari_'s RPGMod",
+  "description": "Trying hard to be an extensive RPG mod.",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["Kailari_"],
+  "credits": "...",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]
