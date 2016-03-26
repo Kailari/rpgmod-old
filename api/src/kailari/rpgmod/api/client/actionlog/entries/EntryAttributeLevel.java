@@ -1,4 +1,4 @@
-package kailari.rpgmod.api.common.actionlog.entries;
+package kailari.rpgmod.api.client.actionlog.entries;
 
 import kailari.rpgmod.api.common.stats.attributes.Attribute;
 

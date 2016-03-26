@@ -1,7 +1,7 @@
 package kailari.rpgmod.client.gui;
 
-import kailari.rpgmod.api.common.actionlog.ActionLog;
-import kailari.rpgmod.api.common.actionlog.entries.ActionLogEntryBase;
+import kailari.rpgmod.api.client.actionlog.ActionLog;
+import kailari.rpgmod.api.client.actionlog.entries.ActionLogEntryBase;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;

@@ -1,8 +1,10 @@
 package kailari.rpgmod.common.networking;
 
 import kailari.rpgmod.RPGMod;
-import kailari.rpgmod.common.networking.messages.ReSyncCharacterStatsMessage;
-import kailari.rpgmod.common.networking.messages.SyncStatVariableMessage;
+import kailari.rpgmod.common.networking.messages.stats.attributes.SyncAttributeMessage;
+import kailari.rpgmod.common.networking.messages.stats.SyncCharacterStatsMessage;
+import kailari.rpgmod.common.networking.messages.stats.SyncStatVariableMessage;
+import kailari.rpgmod.common.networking.messages.stats.attributes.SyncCharacterAttributesMessage;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.fml.common.network.simpleimpl.SimpleNetworkWrapper;
 import net.minecraftforge.fml.relauncher.Side;
@@ -30,10 +32,15 @@ public class Netman {
 		// HACK: Start at -1 and increment before passing the variable to prevent "variable value unused" -type of warnings
 		int discriminator = -1;
 
-		// channel_0
-		channel_0.registerMessage(SyncStatVariableMessage.Handler.class, SyncStatVariableMessage.class, ++discriminator, Side.CLIENT);
-		channel_0.registerMessage(ReSyncCharacterStatsMessage.Handler.class, ReSyncCharacterStatsMessage.class, ++discriminator, Side.CLIENT);
+		// ----- channel_0 -----
 
+		// CharacterStats
+		channel_0.registerMessage(SyncStatVariableMessage.Handler.class, SyncStatVariableMessage.class, ++discriminator, Side.CLIENT);
+		channel_0.registerMessage(SyncCharacterStatsMessage.Handler.class, SyncCharacterStatsMessage.class, ++discriminator, Side.CLIENT);
+
+		// CharacterAttributes
+		channel_0.registerMessage(SyncAttributeMessage.Handler.class, SyncAttributeMessage.class, ++discriminator, Side.CLIENT);
+		channel_0.registerMessage(SyncCharacterAttributesMessage.Handler.class, SyncCharacterAttributesMessage.class, ++discriminator, Side.CLIENT);
 
 		// ...
 	}

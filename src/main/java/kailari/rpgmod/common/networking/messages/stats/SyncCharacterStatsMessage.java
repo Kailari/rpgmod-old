@@ -1,12 +1,11 @@
-package kailari.rpgmod.common.networking.messages;
+package kailari.rpgmod.common.networking.messages.stats;
 
 import io.netty.buffer.ByteBuf;
 import kailari.rpgmod.RPGMod;
 import kailari.rpgmod.api.common.stats.StatRegistry;
+import kailari.rpgmod.api.common.stats.StatVariable;
 import kailari.rpgmod.common.Capabilities;
 import kailari.rpgmod.common.stats.CharacterStats;
-import kailari.rpgmod.api.common.stats.StatVariable;
-import kailari.rpgmod.api.common.stats.Stats;
 import kailari.rpgmod.util.CapHelper;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.IThreadListener;
@@ -20,17 +19,17 @@ import java.util.Set;
 /**
  * Message for synchronizing CharacterStats variables (full re-sync)
  */
-public class ReSyncCharacterStatsMessage implements IMessage {
+public class SyncCharacterStatsMessage implements IMessage {
 	
 	private String[] nbtTags;
 	private float[] values;
 
 	private long randomSeed;
 
-	public ReSyncCharacterStatsMessage() {
+	public SyncCharacterStatsMessage() {
 	}
 
-	public ReSyncCharacterStatsMessage(Set<Map.Entry<StatVariable, Float>> variables, long randomSeed) {
+	public SyncCharacterStatsMessage(Set<Map.Entry<StatVariable, Float>> variables, long randomSeed) {
 		this.nbtTags = new String[variables.size()];
 		this.values = new float[variables.size()];
 
@@ -90,11 +89,11 @@ public class ReSyncCharacterStatsMessage implements IMessage {
 	}
 	
 	
-	public static class Handler implements IMessageHandler<ReSyncCharacterStatsMessage, IMessage> {
+	public static class Handler implements IMessageHandler<SyncCharacterStatsMessage, IMessage> {
 		@Override
-		public IMessage onMessage(final ReSyncCharacterStatsMessage message, final MessageContext ctx) {
+		public IMessage onMessage(final SyncCharacterStatsMessage message, final MessageContext ctx) {
 			if (ctx.side.isServer()) {
-				RPGMod.logger.error("ReSyncCharacterStatsMessage received on server!");
+				RPGMod.logger.error("SyncCharacterStatsMessage received on server!");
 				return null;
 			}
 

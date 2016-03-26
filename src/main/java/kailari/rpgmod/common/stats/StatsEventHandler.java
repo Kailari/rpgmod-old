@@ -8,7 +8,9 @@ import kailari.rpgmod.api.common.stats.attributes.ICharacterAttributes;
 import kailari.rpgmod.api.common.stats.attributes.xp.AttributeXPSource;
 import kailari.rpgmod.api.common.stats.attributes.xp.AttributeXPSources;
 import kailari.rpgmod.common.Capabilities;
+import kailari.rpgmod.common.event.RPGModEventFactory;
 import kailari.rpgmod.common.stats.attributes.CapabilityCharacterAttributes;
+import kailari.rpgmod.common.stats.attributes.CharacterAttributes;
 import kailari.rpgmod.util.CapHelper;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
@@ -36,7 +38,6 @@ import net.minecraftforge.common.IPlantable;
 import net.minecraftforge.event.brewing.PotionBrewEvent;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
-import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingExperienceDropEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.AnvilRepairEvent;
@@ -150,6 +151,12 @@ public class StatsEventHandler {
 			
 			if (stats != null) {
 				stats.doFullSync();
+
+				CharacterAttributes attrs = (CharacterAttributes) CapHelper.getCapability(player, Capabilities.CAPABILITY_ATTRIBUTES);
+
+				if (attrs != null) {
+					attrs.doFullSync();
+				}
 			}
 		}
 	}
@@ -241,9 +248,11 @@ public class StatsEventHandler {
 			return;
 		}
 		
-		Entity attacker = event.getSource().getSourceOfDamage();
-		if (attacker != null) {
-			
+		Entity attackerEntity = event.getSource().getSourceOfDamage();
+		if (attackerEntity != null && attackerEntity instanceof EntityPlayer) {
+
+			EntityPlayer attacker = (EntityPlayer) attackerEntity;
+
 			// Make sure that damage source entity has stat capabilities
 			ICharacterStats attackerStats = CapHelper.getCapability(attacker, Capabilities.CAPABILITY_STATS);
 			
@@ -355,13 +364,8 @@ public class StatsEventHandler {
 
 	@SubscribeEvent
 	public void onLivingAttack(LivingAttackEvent event) {
-		// Only handle these on the server
-		if (event.getEntity().worldObj.isRemote) {
-			return; // TODO: Debug this and determine if client needs to know about misses (randoms are synchronized so might be a good idea anyways)
-		}
-
 		Entity entity = event.getSource().getSourceOfDamage();
-		if (entity != null) {
+		if (entity != null && entity instanceof EntityPlayer) {
 			
 			// Make sure that damage source entity has stat capabilities
 			ICharacterStats attackerStats = CapHelper.getCapability(entity, Capabilities.CAPABILITY_STATS);
@@ -392,23 +396,22 @@ public class StatsEventHandler {
 					grantAttackerMissingXP(attackerAttrs, event.getSource(), amount);
 					
 					RPGMod.logger.info("Attack missed!");
-					
+
 					// Only add messages on players' missed attacks
-					if (entity instanceof EntityPlayer) {
-						if (entity.worldObj.isRemote) {
-							entity.addChatMessage(new TextComponentString("Attack missed!"));
-						}
+					if (entity.worldObj.isRemote) {
+						entity.addChatMessage(new TextComponentString("Attack missed!"));
 					}
 					event.setCanceled(true);
-					
-					// TODO: Post onMissed -event
+
+					float totalEvasion = attackerStats.get(Stats.MISS_CHANCE) + targetEvasion;
+					RPGModEventFactory.onPlayerAttackMissed((EntityPlayer) entity, event.getEntity(), totalEvasion, event.getAmount());
 				}
 			}
 		}
 	}
 
 	private void grantTargetDodgingXP(ICharacterAttributes targetAttrs, DamageSource source, int amount) {
-		if (targetAttrs != null) {
+		if (targetAttrs != null && !targetAttrs.getPlayer().worldObj.isRemote) {
 			AttributeXPSources.Damage.DODGING.grantXP(targetAttrs, amount);
 
 			if (source instanceof EntityDamageSourceIndirect) {
@@ -420,7 +423,7 @@ public class StatsEventHandler {
 	}
 
 	private void grantAttackerMissingXP(ICharacterAttributes attackerAttrs, DamageSource source, int amount) {
-		if (attackerAttrs != null) {
+		if (attackerAttrs != null && !attackerAttrs.getPlayer().worldObj.isRemote) {
 			AttributeXPSources.Damage.MISSING.grantXP(attackerAttrs, amount);
 
 			if (source instanceof EntityDamageSourceIndirect) {
@@ -433,86 +436,18 @@ public class StatsEventHandler {
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//	LivingDeathEvent
-//  ----------------
-//	Handles granting XP upon kills. Due to how vanilla XP mechanics work, player entities are ignored
-//	here, and handled separately during LivingExperienceDropEvent
-//
-//	Executes at EventPriority.LOWEST in case event is cancelled and entity shouldn't die.
-//
-//	Handles following XP sources:
-//	 - Killing.KILLING		(for non-player entities)
-//	 - Killing.ANIMALS		(for non-player entities)
-//	 - Killing.MONSTERS 	(for non-player entities)
-//	 - Killing.VILLAGERS	(for non-player entities)
-//	 - Killing.PLAYERS 		(for non-player entities)
-//
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	
-	@SubscribeEvent(priority = EventPriority.LOWEST)
-	public void onLivingDeath(LivingDeathEvent event) {
-		// Only handle these on the server
-		if (event.getEntity().worldObj.isRemote) {
-			return;
-		}
-		
-		// We can't add xp to attacker if there is none.
-		Entity attacker = event.getSource().getEntity();
-		
-		if (attacker != null) {
-			// Don't handle player caused deaths here
-			if (attacker instanceof EntityPlayer) {
-				return;
-			}
-			
-			// We can't add xp to attacker if it doesn't support attributes
-			ICharacterAttributes attackerAttributes = CapHelper.getCapability(attacker, Capabilities.CAPABILITY_ATTRIBUTES);
-			
-			if (attackerAttributes != null) {
-				
-				// Grant generic killing XP
-				AttributeXPSources.Killing.KILLING.grantXP(attackerAttributes);
-				
-				// Determine what we killed and grant XP
-				AttributeXPSource xpSource = getKillingXPSourceByEntityType(event.getEntityLiving());
-				
-				if (xpSource != null) {
-					xpSource.grantXP(attackerAttributes);
-				}
-			}
-		}
-	}
-	
-	private AttributeXPSource getKillingXPSourceByEntityType(EntityLivingBase entity) {
-		if (entity instanceof EntityAnimal || entity instanceof EntityWaterMob || entity instanceof EntityAmbientCreature) {
-			return AttributeXPSources.Killing.ANIMALS;
-		} else if (entity instanceof EntityMob || entity instanceof EntityGolem) {
-			return AttributeXPSources.Killing.MONSTERS;
-		} else if (entity instanceof EntityVillager) {
-			return AttributeXPSources.Killing.VILLAGERS;
-		} else if (entity instanceof EntityPlayer) {
-			return AttributeXPSources.Killing.PLAYERS;
-		} else {
-			RPGMod.logger.warn("Could not find suitable xp source for killing: "
-					+ entity.getClass().getSimpleName());
-			return null;
-		}
-	}
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //	LivingExperienceDropEvent
 //  -------------------------
-//	Handles granting XP upon kills made by players. Applies dropped exp amounts as granted XP amount.
+//	Handles granting XP upon kills. Applies dropped exp amounts as granted XP amount.
 //
 //	Executes at EventPriority.LOWEST to ensure that the experience value we get is the final experience value.
 //
 //	Handles following XP sources:
-//	 - Killing.KILLING		(for player entities)
-//	 - Killing.ANIMALS		(for player entities)
-//	 - Killing.MONSTERS 	(for player entities)
-//	 - Killing.VILLAGERS	(for player entities)
-//	 - Killing.PLAYERS 		(for player entities)
+//	 - Killing.KILLING
+//	 - Killing.ANIMALS
+//	 - Killing.MONSTERS
+//	 - Killing.VILLAGERS
+//	 - Killing.PLAYERS
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
@@ -542,21 +477,36 @@ public class StatsEventHandler {
 		}
 	}
 
+	private AttributeXPSource getKillingXPSourceByEntityType(EntityLivingBase entity) {
+		if (entity instanceof EntityAnimal || entity instanceof EntityWaterMob || entity instanceof EntityAmbientCreature) {
+			return AttributeXPSources.Killing.ANIMALS;
+		} else if (entity instanceof EntityMob || entity instanceof EntityGolem) {
+			return AttributeXPSources.Killing.MONSTERS;
+		} else if (entity instanceof EntityVillager) {
+			return AttributeXPSources.Killing.VILLAGERS;
+		} else if (entity instanceof EntityPlayer) {
+			return AttributeXPSources.Killing.PLAYERS;
+		} else {
+			RPGMod.logger.warn("Could not find suitable xp source for killing: "
+					+ entity.getClass().getSimpleName());
+			return null;
+		}
+	}
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //	BlockEvent.BreakEvent
 //  ---------------------
-//	Handles granting XP after breaking blocks. Triggered only for player entities, thus
-// 	non-player entities cannot gain XP from this.
+//	Handles granting XP after breaking blocks.
 //
 //	Executes at EventPriority.LOWEST to ensure that the event isn't cancelled and block really gets destroyed.
 //
 //	Handles following XP sources:
-//	 - Mining.BREAKING_BLOCKS	(for player entities)
-//	 - Mining.DIGGING			(for player entities)
-//	 - Mining.MINING			(for player entities)
-//	 - Mining.SHOVELING			(for player entities)
-//	 - Mining.WOODCUTTING		(for player entities)
+//	 - Mining.BREAKING_BLOCKS
+//	 - Mining.DIGGING
+//	 - Mining.MINING
+//	 - Mining.SHOVELING
+//	 - Mining.WOODCUTTING
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -690,87 +640,86 @@ public class StatsEventHandler {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //	AnvilRepairEvent
 //  ----------------
-//	Handles granting XP from using anvil. Modifies anvil break chance based on stats. Non-player
-//  entities cannot use anvil, so these work only for players.
+//	Handles granting XP from using anvil.
 //
 //	Handles following XP sources:
-//	 - Forging.FORGING		(for player entities)
-//	 - Forging.TOOLS		(for player entities)
-//	 - Forging.WEAPONS		(for player entities)
-//	 - Forging.ARMOR		(for player entities)
-//	 - Forging.BOOKS		(for player entities)
-//	 - Forging.REPAIRING	(for player entities)
-//	 - Forging.ENCHANTING	(for player entities)
-//	 - Forging.NAMING		(for player entities)
+//	 - Forging.FORGING
+//	 - Forging.TOOLS
+//	 - Forging.WEAPONS
+//	 - Forging.ARMOR
+//	 - Forging.BOOKS
+//	 - Forging.REPAIRING
+//	 - Forging.ENCHANTING
+//	 - Forging.NAMING
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	
+
+	// TODO: Refactor & clean, this thing is almost unreadable
+
 	@SubscribeEvent
 	public void onAnvilUsed(AnvilRepairEvent event) {
 		// Only handle these on the server
 		if (event.getEntity().worldObj.isRemote) {
 			return;
 		}
-		
-		// Modify anvil break chance based on stats
+
 		ICharacterStats stats = CapHelper.getCapability(event.getEntity(), Capabilities.CAPABILITY_STATS);
-		
-		if (stats != null) {
-			event.setBreakChance((event.getBreakChance() + stats.get(Stats.ANVIL_BREAK_CHANCE_BONUS)) * stats.get(Stats.ANVIL_BREAK_CHANCE_MULT));
-		} else {
-			// We cannot have attributes either if stats are missing
+		if (stats == null) {
 			return;
 		}
-		
+
+		// Modify anvil break chance based on stats
+		event.setBreakChance((event.getBreakChance() + stats.get(Stats.ANVIL_BREAK_CHANCE_BONUS)) * stats.get(Stats.ANVIL_BREAK_CHANCE_MULT));
+
 		// Grant xp from anvil operating if attributes capability is available
 		ICharacterAttributes attributes = CapHelper.getCapability(event.getEntity(), Capabilities.CAPABILITY_ATTRIBUTES);
-		
-		if (attributes != null) {
-			
-			// Grant generic anvil usage xp
-			AttributeXPSources.Forging.FORGING.grantXP(attributes);
-			
-			
-			Item item = event.getOutput().getItem();
-			
-			// Determine if we are working on tools or weapons
-			if (item.isItemTool(event.getOutput())) {
-				
-				// Assume that all weapons are either swords or bows
-				// TODO: Create interfaces IWeapon and ITool so that custom items can easily be distinguished
-				if (item instanceof ItemSword || item instanceof ItemBow) {
-					AttributeXPSources.Forging.WEAPONS.grantXP(attributes);
-				} else {
-					AttributeXPSources.Forging.TOOLS.grantXP(attributes);
-				}
+		if (attributes == null) {
+			return;
+		}
+
+		// Grant generic anvil usage xp
+		AttributeXPSources.Forging.FORGING.grantXP(attributes);
+
+
+		Item item = event.getOutput().getItem();
+
+		// Determine if we are working on tools or weapons
+		if (item.isItemTool(event.getOutput())) {
+
+			// Assume that all weapons are either swords or bows
+			// TODO: Create interfaces IWeapon and ITool so that custom items can easily be distinguished
+			if (item instanceof ItemSword || item instanceof ItemBow) {
+				AttributeXPSources.Forging.WEAPONS.grantXP(attributes);
+			} else {
+				AttributeXPSources.Forging.TOOLS.grantXP(attributes);
 			}
-			// Are we working on an piece of armor?
-			else if (isItemArmor(event.getOutput(), item)) {
-				AttributeXPSources.Forging.ARMOR.grantXP(attributes);
-			}
-			
-			
-			// Combining enchanted books
-			if (item == Items.enchanted_book) {
-				AttributeXPSources.Forging.BOOKS.grantXP(attributes);
-			}
-			// Repairing
-			else if (event.getOutput().getItemDamage() < event.getLeft().getItemDamage()) {
-				AttributeXPSources.Forging.REPAIRING.grantXP(attributes);
-			}
-			// Applying enchantments
-			else if (event.getRight().getItem() == Items.enchanted_book) {
-				AttributeXPSources.Forging.ENCHANTING.grantXP(attributes);
-			}
-			// Naming
-			else if (event.getLeft().hasDisplayName() != event.getOutput().hasDisplayName()
-					|| !event.getLeft().getDisplayName().equals(event.getOutput().getDisplayName())) {
-				AttributeXPSources.Forging.NAMING.grantXP(attributes);
-			}
-			// Error.
-			else {
-				RPGMod.logger.warn("Could not determine type of anvil operation!");
-			}
+		}
+		// Are we working on an piece of armor?
+		else if (isItemArmor(event.getOutput(), item)) {
+			AttributeXPSources.Forging.ARMOR.grantXP(attributes);
+		}
+
+
+		// Combining enchanted books
+		if (item == Items.enchanted_book) {
+			AttributeXPSources.Forging.BOOKS.grantXP(attributes);
+		}
+		// Repairing
+		else if (event.getOutput().getItemDamage() < event.getLeft().getItemDamage()) {
+			AttributeXPSources.Forging.REPAIRING.grantXP(attributes);
+		}
+		// Applying enchantments
+		else if (event.getRight().getItem() == Items.enchanted_book) {
+			AttributeXPSources.Forging.ENCHANTING.grantXP(attributes);
+		}
+		// Naming
+		else if (event.getLeft().hasDisplayName() != event.getOutput().hasDisplayName()
+				|| !event.getLeft().getDisplayName().equals(event.getOutput().getDisplayName())) {
+			AttributeXPSources.Forging.NAMING.grantXP(attributes);
+		}
+		// Error.
+		else {
+			RPGMod.logger.warn("Could not determine type of anvil operation!");
 		}
 	}
 	
@@ -787,13 +736,12 @@ public class StatsEventHandler {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //	PlayerEvent.ItemSmeltedEvent
 //  ----------------------------
-//	Handles granting XP from furnace operating. Non-player entities cannot use furnaces,
-//  so these work only for players.
+//	Handles granting XP from furnace operating.
 //
 //	Handles following XP sources:
-//	 - Furnace.OPERATING	(for player entities)
-//	 - Furnace.COOKING		(for player entities)
-//	 - Furnace.SMELTING		(for player entities)
+//	 - Furnace.OPERATING
+//	 - Furnace.COOKING
+//	 - Furnace.SMELTING
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
@@ -805,35 +753,35 @@ public class StatsEventHandler {
 		}
 		
 		ICharacterAttributes attributes = CapHelper.getCapability(event.player, Capabilities.CAPABILITY_ATTRIBUTES);
-		
-		if (attributes != null) {
+		if (attributes == null) {
+			return;
+		}
 
-			// TODO: Do some research on how smelting xp works and do something more fancy with this one to get sensible numbers
-			int amount = (int) (10 * FurnaceRecipes.instance().getSmeltingExperience(event.smelting));
+		// TODO: Do some research on how smelting xp works and do something more fancy with this one to get sensible numbers
+		int amount = (int) (10 * FurnaceRecipes.instance().getSmeltingExperience(event.smelting));
 
-			AttributeXPSources.Furnace.OPERATING.grantXP(attributes, amount);
-			
-			if (event.smelting.getItem() instanceof ItemFood) {
-				AttributeXPSources.Furnace.COOKING.grantXP(attributes, amount);
-			} else {
-				AttributeXPSources.Furnace.SMELTING.grantXP(attributes, amount);
-			}
+		AttributeXPSources.Furnace.OPERATING.grantXP(attributes, amount);
+
+		if (event.smelting.getItem() instanceof ItemFood) {
+			AttributeXPSources.Furnace.COOKING.grantXP(attributes, amount);
+		} else {
+			AttributeXPSources.Furnace.SMELTING.grantXP(attributes, amount);
 		}
 	}
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//	PlayerEvent.ItemSmeltedEvent
+//	PlayerEvent.ItemCraftedEvent
 //  ----------------------------
-//	Handles granting XP from furnace operating. Non-player entities cannot use furnaces,
-//  so these work only for players.
+//	Handles granting XP from crafting things.
 //
 //	Handles following XP sources:
-//	 - Furnace.OPERATING	(for player entities)
-//	 - Furnace.COOKING		(for player entities)
-//	 - Furnace.SMELTING		(for player entities)
+//	 - Crafting.CRAFTING
+//	 - Crafting.REPAIRING
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	// TODO: Some cleanup on repair detection could be nice
 
 	@SubscribeEvent
 	public void onItemCrafted(ItemCraftedEvent event) {
@@ -878,12 +826,10 @@ public class StatsEventHandler {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //	PotionBrewEvent.Post
 //  --------------------
-//	Handles granting XP from operating brewing stand. Non-player entities cannot use brewing stands,
-//  so these work only for players. (actually this is more of an optimization to avoid iterating trough
-//  every single entity in the world every time potion brewing is completed)
+//	Handles granting XP from operating brewing stand.
 //
 //	Handles following XP sources:
-//	 - Brewing.BREWING		(for player entities)
+//	 - Brewing.BREWING
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
@@ -927,7 +873,7 @@ public class StatsEventHandler {
 		 */
 		
 		
-		// 1. Get all players
+		// 1. Get all players (Must be MP for getting WorldServer in order to call .getTileEntitiesIn(...))
 		List<EntityPlayerMP> players = FMLCommonHandler.instance().getMinecraftServerInstance().getPlayerList().getPlayerList();
 		
 		// 2. For each player, make sure player has required caps and then get all nearby tile-entities
@@ -967,10 +913,10 @@ public class StatsEventHandler {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //	UseHoeEvent
 //  -----------
-//	Handles granting XP from tilling soil with a hoe. Works only for player entities.
+//	Handles granting XP from tilling soil with a hoe.
 //
 //	Handles following XP sources:
-//	 - Farming.TILLING		(for player entities)
+//	 - Farming.TILLING
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
@@ -992,12 +938,12 @@ public class StatsEventHandler {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //	BonemealEvent
 //  -------------
-//	Handles granting XP from fertilizing plants with bonemeal. Works only for player entities.
+//	Handles granting XP from fertilizing plants with bonemeal.
 //
 //	Executes at EventPriority.LOWEST to ensure that the event isn't cancelled or result set to DENY.
 //
 //	Handles following XP sources:
-//	 - Farming.FERTILIZING		(for player entities)
+//	 - Farming.FERTILIZING
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
@@ -1019,12 +965,12 @@ public class StatsEventHandler {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //	BlockEvent.PlaceEvent
 //  ---------------------
-//	Handles granting XP from planting. Works only for player entities.
+//	Handles granting XP from planting.
 //
 //	Executes at EventPriority.LOWEST to ensure that the event isn't cancelled.
 //
 //	Handles following XP sources:
-//	 - Farming.PLANTING		(for player entities)
+//	 - Farming.PLANTING
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
@@ -1058,10 +1004,12 @@ public class StatsEventHandler {
 //	RELIES ON DEFAULT IMPLEMENTATION
 //
 //	Handles following XP sources:
-//	 - Maneuvers.SPRINTING		(for player entities)
-//	 - Maneuvers.WALKING		(for player entities)
+//	 - Maneuvers.SPRINTING
+//	 - Maneuvers.WALKING
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	// TODO: Cleanup
 
 	private static final UUID sprintSpeedModifierUUID = UUID.fromString("fe9f3dbd-f6aa-49dd-8296-7a1725740a18");
 

@@ -5,9 +5,8 @@ import kailari.rpgmod.api.common.stats.StatRegistry;
 import kailari.rpgmod.api.common.stats.StatVariable;
 import kailari.rpgmod.api.common.stats.Stats;
 import kailari.rpgmod.common.networking.Netman;
-import kailari.rpgmod.common.networking.messages.ReSyncCharacterStatsMessage;
-import kailari.rpgmod.common.networking.messages.SyncStatVariableMessage;
-import net.minecraft.entity.Entity;
+import kailari.rpgmod.common.networking.messages.stats.SyncCharacterStatsMessage;
+import kailari.rpgmod.common.networking.messages.stats.SyncStatVariableMessage;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.util.DamageSource;
@@ -62,7 +61,7 @@ public class CharacterStats implements ICharacterStats {
 	public void set(StatVariable variable, float value) {
 		this.variables.put(variable, value);
 
-		if (this.entityIsPlayer) {
+		if (!this.player.worldObj.isRemote) {
 			syncVariable(variable);
 		}
 	}
@@ -74,8 +73,7 @@ public class CharacterStats implements ICharacterStats {
 
 	private final Map<StatVariable, Float> variables;
 
-	private final Entity entity;
-	private final boolean entityIsPlayer;
+	private final EntityPlayer player;
 
 	// Additional state variables
 	// TODO: Remove dependency to default implementation by creating some sort of "state container" inside ICharacterStats
@@ -83,9 +81,8 @@ public class CharacterStats implements ICharacterStats {
 	private boolean wasSprinting; // Records sprinting state so that we know when to add/remove modifiers
 	private BlockPos previousDistanceXPPos;
 
-	public CharacterStats(Entity entity) {
-		this.entity = entity;
-		this.entityIsPlayer = entity instanceof EntityPlayer;
+	public CharacterStats(EntityPlayer player) {
+		this.player = player;
 
 		// Just initialize here, seed will be set during re-sync (and initial sync).
 		this.missChanceRandom = new Random();
@@ -103,17 +100,13 @@ public class CharacterStats implements ICharacterStats {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
 	private void syncVariable(StatVariable variable) {
-		if (this.entity.worldObj.isRemote) {
-			return;
-		}
-
 		Netman.channel_0.sendTo(
 				new SyncStatVariableMessage(variable.getNBTKey(), this.get(variable)),
-				(EntityPlayerMP) this.entity);
+				(EntityPlayerMP) this.player);
 	}
 
-	protected void doFullSync() {
-		if (this.entity.worldObj.isRemote) {
+	public void doFullSync() {
+		if (this.player.worldObj.isRemote) {
 			throw new IllegalStateException("doFullSync should NEVER get called on remote!");
 		}
 
@@ -123,8 +116,8 @@ public class CharacterStats implements ICharacterStats {
 
 		// Send all variables and new random seed to the client
 		Netman.channel_0.sendTo(
-				new ReSyncCharacterStatsMessage(this.variables.entrySet(), seed),
-				(EntityPlayerMP) this.entity);
+				new SyncCharacterStatsMessage(this.variables.entrySet(), seed),
+				(EntityPlayerMP) this.player);
 	}
 
 	@SideOnly(Side.CLIENT)

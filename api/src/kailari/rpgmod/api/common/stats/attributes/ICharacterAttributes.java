@@ -25,5 +25,5 @@ public interface ICharacterAttributes {
 
 	void set(Attribute attribute, int xp, int bonusLevels);
 
-	Entity getTarget();
+	Entity getPlayer();
 }

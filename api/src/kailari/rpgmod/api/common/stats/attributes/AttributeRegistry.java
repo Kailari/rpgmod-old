@@ -18,6 +18,10 @@ public class AttributeRegistry {
 		return attributeRegistry.get(key);
 	}
 
+	public static int getCount() {
+		return attributeRegistry.size();
+	}
+
 
 	private static final Map<String, Attribute> attributeRegistry = new HashMap<String, Attribute>();
 

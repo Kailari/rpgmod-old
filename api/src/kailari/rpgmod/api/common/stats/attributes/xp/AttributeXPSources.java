@@ -10,7 +10,7 @@ public final class AttributeXPSources {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	/**
-	 * Digging holes and punching trees! (breaking blocks, works only for players)
+	 * Digging holes and punching trees!
 	 */
 	public static final class Mining {
 
@@ -78,8 +78,7 @@ public final class AttributeXPSources {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	/**
-	 * Killing/hunting stuff.
-	 * All of these specify dropped XP as the xp amount if killer entity is EntityPlayer.
+	 * Killing/hunting stuff. All of these specify dropped XP as the xp amount.
 	 */
 	public static final class Killing {
 

@@ -1,7 +1,8 @@
 package kailari.rpgmod.common.stats.attributes;
 
-import kailari.rpgmod.api.common.actionlog.ActionLog;
-import kailari.rpgmod.api.common.actionlog.entries.EntryAttributeLevel;
+import kailari.rpgmod.api.client.actionlog.ActionLog;
+import kailari.rpgmod.api.client.actionlog.entries.EntryAttributeExperience;
+import kailari.rpgmod.api.client.actionlog.entries.EntryAttributeLevel;
 import kailari.rpgmod.api.common.stats.ICharacterStats;
 import kailari.rpgmod.api.common.stats.StatVariable;
 import kailari.rpgmod.api.common.stats.attributes.Attribute;
@@ -9,8 +10,16 @@ import kailari.rpgmod.api.common.stats.attributes.AttributeRegistry;
 import kailari.rpgmod.api.common.stats.attributes.ICharacterAttributes;
 import kailari.rpgmod.api.common.stats.attributes.link.IStatLink;
 import kailari.rpgmod.common.Capabilities;
+import kailari.rpgmod.common.networking.Netman;
+import kailari.rpgmod.common.networking.messages.stats.attributes.SyncAttributeMessage;
+import kailari.rpgmod.common.networking.messages.stats.attributes.SyncCharacterAttributesMessage;
 import kailari.rpgmod.util.CapHelper;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
+import org.apache.commons.lang3.Validate;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,41 +40,15 @@ public class CharacterAttributes implements ICharacterAttributes {
 		}
 
 		AttributeInstance instance = this.attributes.get(attribute);
-
-		int levelBefore = instance.getLevel() + instance.getBonus();
-
 		set(attribute, instance.getXP() + amount, instance.getBonus());
-
-		int levelAfter = instance.getLevel() + instance.getBonus();
-
-		if (levelAfter > levelBefore) {
-			ActionLog.addEntry(new EntryAttributeLevel(
-					attribute,
-					instance.getLevel(),
-					instance.getBonus()));
-		}
 	}
 
 
 	@Override
-	public void set(Attribute attribute, int xp, int bonusLevels) {
-		// Get the desired attribute
-		AttributeInstance instance = this.attributes.get(attribute);
-		int newLevel = attribute.getLevel(xp);
-
-		// Update attribute level. Modifiers to stats are applied here.
-		updateLevel(
-				attribute,
-				this.stats,
-				newLevel + bonusLevels,
-				instance.getLevel() + instance.getBonus());
-
-		instance.setLevel(newLevel);
-		instance.setXP(xp);
-		instance.setBonus(bonusLevels);
-
-		// Update values in storage
-		this.attributes.put(attribute, instance);
+	public void set(Attribute attribute, int xp, int bonus) {
+		if (this.setInternal(attribute, xp, bonus) && !this.getPlayer().worldObj.isRemote) {
+			syncAttribute(attribute);
+		}
 	}
 
 
@@ -89,9 +72,8 @@ public class CharacterAttributes implements ICharacterAttributes {
 		return this.attributes.get(attribute).getXP();
 	}
 
-	@Override
-	public Entity getTarget() {
-		return this.target;
+	public Entity getPlayer() {
+		return this.player;
 	}
 
 
@@ -100,22 +82,48 @@ public class CharacterAttributes implements ICharacterAttributes {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	private final Map<Attribute, AttributeInstance> attributes;
-	private final Entity target;
+	private final EntityPlayer player;
 	private final ICharacterStats stats;
 
-	public CharacterAttributes(Entity entity) {
+	public CharacterAttributes(EntityPlayer player) {
 		this.attributes = new HashMap<Attribute, AttributeInstance>();
-		this.target = entity;
+		this.player = player;
 
 		for (Attribute attribute : AttributeRegistry.getAll()) {
 			this.attributes.put(attribute, new AttributeInstance(0, 0));
 		}
 
-		this.stats = CapHelper.getCapability(entity, Capabilities.CAPABILITY_STATS);
+		// Player must have stats capability for attributes to work.
+		this.stats = CapHelper.getCapability(player, Capabilities.CAPABILITY_STATS);
+		Validate.notNull(this.stats);
+	}
 
-		if (this.stats == null) {
-			throw new IllegalStateException("Tried to add attribute capabilities to an entity without stat capability!");
+	private boolean setInternal(Attribute attribute, int xp, int bonus) {
+		// Get the desired attribute
+		AttributeInstance instance = this.attributes.get(attribute);
+
+		int oldXp = instance.getXP();
+		if (oldXp == xp && instance.getBonus() == bonus) {
+			return false;
 		}
+
+		int newLevel = attribute.getLevel(xp);
+
+		// Update attribute level. Modifiers to stats are applied here.
+		updateLevel(
+				attribute,
+				this.stats,
+				newLevel + bonus,
+				instance.getLevel() + instance.getBonus());
+
+		instance.setLevel(newLevel);
+		instance.setXP(xp);
+		instance.setBonus(bonus);
+
+		// Update values in storage
+		//this.attributes.put(attribute, instance); XXX: This should be unnecessary
+
+		return true;
 	}
 
 	private void updateLevel(Attribute attribute, ICharacterStats stats, int newLevel, int oldLevel) {
@@ -151,5 +159,51 @@ public class CharacterAttributes implements ICharacterAttributes {
 		}
 
 		return total;
+	}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Networking
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	public void doFullSync() {
+		if (this.player.worldObj.isRemote) {
+			throw new IllegalStateException("doFullSync should NEVER get called on remote!");
+		}
+
+		// Send all variables and new random seed to the client
+		Netman.channel_0.sendTo(new SyncCharacterAttributesMessage(this), (EntityPlayerMP) this.player);
+	}
+
+	public void syncAttribute(Attribute attribute) {
+		if (this.player.worldObj.isRemote) {
+			throw new IllegalStateException("syncAttribute should NEVER get called on remote!");
+		}
+
+		Netman.channel_0.sendTo(
+				new SyncAttributeMessage(
+						attribute.getNBTKey(),
+						this.getXP(attribute),
+						this.getBonus(attribute)),
+				(EntityPlayerMP) this.player);
+	}
+
+	@SideOnly(Side.CLIENT)
+	public void receiveAttributeData(Attribute attribute, int xp, int bonus) {
+		AttributeInstance instance = this.attributes.get(attribute);
+		int oldXp = instance.getXP();
+		int oldLevel = instance.getLevel();
+
+		setInternal(attribute, xp, bonus);
+
+		int newLevel = instance.getLevel();
+
+		if (xp > oldXp) {
+			ActionLog.addEntry(new EntryAttributeExperience(attribute, xp - oldXp));
+
+			if (newLevel > oldLevel) {
+				ActionLog.addEntry(new EntryAttributeLevel(attribute, newLevel, bonus));
+			}
+		}
 	}
 }
