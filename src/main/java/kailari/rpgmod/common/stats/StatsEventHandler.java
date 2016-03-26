@@ -1096,7 +1096,6 @@ public class StatsEventHandler {
 			return;
 		}
 
-		// TODO: Might require something bit more fancy
 		EntityPlayer player = (EntityPlayer) event.getEntity();
 		player.motionY += stats.get(Stats.JUMP_BONUS);
 
