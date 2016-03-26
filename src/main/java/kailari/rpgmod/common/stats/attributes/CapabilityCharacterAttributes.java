@@ -1,5 +1,7 @@
 package kailari.rpgmod.common.stats.attributes;
 
+import kailari.rpgmod.api.common.stats.attributes.Attribute;
+import kailari.rpgmod.api.common.stats.attributes.AttributeRegistry;
 import kailari.rpgmod.api.common.stats.attributes.ICharacterAttributes;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
@@ -42,10 +44,26 @@ public class CapabilityCharacterAttributes {
 	}
 
 	public static void writeToNBT(NBTTagCompound compound, ICharacterAttributes instance) {
+		for (Attribute attribute : AttributeRegistry.getAll()) {
+			NBTTagCompound attributeCompound = new NBTTagCompound();
 
+			// Only the xp and bonus are needed, as everything else can be calculated from them
+			attributeCompound.setInteger("xp", instance.getXP(attribute));
+			attributeCompound.setInteger("bonus", instance.getBonus(attribute));
+
+			// Add the attribute tag to the main compound
+			compound.setTag(attribute.getNBTKey(), attributeCompound);
+		}
 	}
 
 	public static void readFromNBT(NBTTagCompound compound, ICharacterAttributes instance) {
+		for (Attribute attribute : AttributeRegistry.getAll()) {
+			NBTTagCompound attributeCompound = compound.getCompoundTag(attribute.getNBTKey());
 
+			instance.set(
+					attribute,
+					attributeCompound.getInteger("xp"),
+					attributeCompound.getInteger("bonus"));
+		}
 	}
 }
