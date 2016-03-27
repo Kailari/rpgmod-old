@@ -539,7 +539,7 @@ public class StatsEventHandler {
 		AttributeXPSources.Mining.BREAKING_BLOCKS.grantXP(attributes, amount);
 
 		// Get the currently equipped itemStack in active hand
-		ItemStack equippedStack = event.getPlayer().getActiveItemStack();
+		ItemStack equippedStack = event.getPlayer().getHeldItemMainhand();
 
 		// Make sure there is a item equipped
 		if (equippedStack != null) {
@@ -1086,7 +1086,7 @@ public class StatsEventHandler {
 	@SubscribeEvent
 	public void onLivingJump(LivingEvent.LivingJumpEvent event) {
 		if (event.getEntity().worldObj.isRemote) {
-			//return;
+			return;
 		}
 
 		// Get stats and attributes and ensure that entity is a player

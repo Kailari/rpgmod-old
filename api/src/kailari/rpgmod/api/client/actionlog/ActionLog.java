@@ -21,23 +21,7 @@ public class ActionLog {
 		logEntries.addFirst(entry);
 	}
 
-	public static List<ActionLogEntryBase> getEntries() {
+	public static LinkedList<ActionLogEntryBase> getEntries() {
 		return logEntries;
-	}
-
-	public static List<ActionLogEntryBase> getEntriesNewerThan(long time) {
-		ListIterator<ActionLogEntryBase> iterator = logEntries.listIterator();
-
-		List<ActionLogEntryBase> result = new ArrayList<ActionLogEntryBase>();
-
-		while (iterator.hasNext()) {
-			ActionLogEntryBase entry = iterator.next();
-
-			if (entry.getTimeCreated() >= time) {
-				result.add(entry);
-			}
-		}
-
-		return result;
 	}
 }

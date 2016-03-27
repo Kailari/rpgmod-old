@@ -115,6 +115,10 @@ public final class Attribute {
 		return nbtKey;
 	}
 
+	public boolean isMajor() {
+		return this.isMajor;
+	}
+
 	/**
 	 * Returns list of links to stats
 	 */
@@ -130,8 +134,12 @@ public final class Attribute {
 	private final Map<StatVariable, IStatLink> linkedStats;
 	private final String nbtKey;
 
-	public Attribute(String nbtKey) {
+	private final boolean isMajor;
+
+	public Attribute(String nbtKey, boolean isMajor) {
 		this.nbtKey = nbtKey;
+		this.isMajor = isMajor;
+
 		this.linkedStats = new HashMap<StatVariable, IStatLink>();
 
 		AttributeRegistry.register(this);

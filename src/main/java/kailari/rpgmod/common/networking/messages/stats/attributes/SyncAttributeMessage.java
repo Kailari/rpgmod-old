@@ -2,6 +2,10 @@ package kailari.rpgmod.common.networking.messages.stats.attributes;
 
 import io.netty.buffer.ByteBuf;
 import kailari.rpgmod.RPGMod;
+import kailari.rpgmod.api.client.actionlog.ActionLog;
+import kailari.rpgmod.api.client.actionlog.entries.EntryAttributeExperience;
+import kailari.rpgmod.api.client.actionlog.entries.EntryAttributeLevel;
+import kailari.rpgmod.api.common.stats.attributes.Attribute;
 import kailari.rpgmod.api.common.stats.attributes.AttributeRegistry;
 import kailari.rpgmod.common.Capabilities;
 import kailari.rpgmod.common.stats.attributes.CharacterAttributes;
@@ -71,10 +75,35 @@ public class SyncAttributeMessage implements IMessage {
 				public void run() {
 
 					EntityPlayer player = RPGMod.proxy.getPlayerEntity(ctx);
-					CharacterAttributes stats = (CharacterAttributes) CapHelper.getCapability(player, Capabilities.ATTRIBUTES);
+					CharacterAttributes attrs = (CharacterAttributes) CapHelper.getCapability(player, Capabilities.ATTRIBUTES);
 
-					if (stats != null) {
-						stats.receiveAttributeData(AttributeRegistry.get(message.nbtKey), message.xp, message.bonus);
+					if (attrs != null) {
+
+						Attribute attribute = AttributeRegistry.get(message.nbtKey);
+
+						// Cache old level/xp for lvl-up calculation
+						int oldXP = attrs.getXP(attribute);
+						int oldLevel = attrs.getLevel(attribute);
+
+						// Update attribute with data received from the server
+						attrs.receiveAttributeData(attribute, message.xp, message.bonus);
+
+						// Check if xp and/or level changed and log them to action log
+						int newXP = attrs.getXP(attribute);
+						int newLevel = attrs.getLevel(attribute);
+						int bonus = attrs.getBonus(attribute);
+
+						// Only log major attributes TODO: Add debug/configurable option to log minor attrs too
+						if (attribute.isMajor() && newXP > oldXP) {
+
+							ActionLog.addEntry(new EntryAttributeExperience(attribute, newXP - oldXP));
+
+							if (newLevel > oldLevel) {
+								ActionLog.addEntry(new EntryAttributeLevel(attribute, newLevel, bonus));
+
+								// TODO: AttributeLevelUpEvent.Client
+							}
+						}
 					}
 
 				}

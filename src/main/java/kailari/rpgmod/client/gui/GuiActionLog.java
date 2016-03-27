@@ -13,6 +13,7 @@ import org.lwjgl.opengl.GL11;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -22,7 +23,6 @@ import java.util.List;
 public class GuiActionLog extends Gui {
 
 	private Minecraft mc;
-	private long time;
 
 	public GuiActionLog() {
 		this.mc = Minecraft.getMinecraft();
@@ -35,18 +35,13 @@ public class GuiActionLog extends Gui {
 			return;
 		}
 
-		List<ActionLogEntryBase> logEntries = ActionLog.getEntriesNewerThan(time);
-		this.time = System.currentTimeMillis();
-
-		Collections.sort(logEntries);
+		// TODO: replace System.currentTimeMillis() calls with world timer
+		long time = System.currentTimeMillis();
 
 		int n = 1;
-		List<ActionLogEntryBase> toBeRemoved = new ArrayList<ActionLogEntryBase>();
-		for (ActionLogEntryBase entry : logEntries) {
-			// TODO: Determine (asking around on forums is probably a good idea) if this is safe way of doing this or should world timer be used
-			if (entry.hasExpired(this.time)) {
-				toBeRemoved.add(entry);
-				continue;
+		for (ActionLogEntryBase entry : ActionLog.getEntries()) {
+			if (entry.hasExpired(time)) {
+				break;
 			}
 
 			GL11.glPushMatrix();
@@ -65,14 +60,9 @@ public class GuiActionLog extends Gui {
 
 			GL11.glPopMatrix();
 		}
-
-		// Clean up.
-		logEntries.removeAll(toBeRemoved);
 	}
 
 	public enum LogType {
-		PERK_LVL("Level up! %1$s is now lvl %2$d"),       // String, Integer
-		GOT_MORE_ITEM("%1$s +%2$d"),                      // String, Integer
 		KILLED_MOB("Slayed %1$s, +%2$d exp"),;            // String, Integer
 
 		private final String message;

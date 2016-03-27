@@ -184,20 +184,6 @@ public class CharacterAttributes implements ICharacterAttributes {
 
 	@SideOnly(Side.CLIENT)
 	public void receiveAttributeData(Attribute attribute, int xp, int bonus) {
-		AttributeInstance instance = this.attributes.get(attribute);
-		int oldXp = instance.getXP();
-		int oldLevel = instance.getLevel();
-
 		setInternal(attribute, xp, bonus);
-
-		int newLevel = instance.getLevel();
-
-		if (xp > oldXp) {
-			ActionLog.addEntry(new EntryAttributeExperience(attribute, xp - oldXp));
-
-			if (newLevel > oldLevel) {
-				ActionLog.addEntry(new EntryAttributeLevel(attribute, newLevel, bonus));
-			}
-		}
 	}
 }

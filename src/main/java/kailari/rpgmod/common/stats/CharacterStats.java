@@ -102,6 +102,9 @@ public class CharacterStats implements ICharacterStats {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
 	private void syncVariable(StatVariable variable) {
+
+		// TODO: Don't sync before full sync has been done once
+
 		Netman.channel_0.sendTo(
 				new SyncStatVariableMessage(variable.getNBTKey(), this.get(variable)),
 				(EntityPlayerMP) this.player);

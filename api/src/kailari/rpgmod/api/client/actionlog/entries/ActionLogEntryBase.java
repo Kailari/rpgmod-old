@@ -9,7 +9,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 @SideOnly(Side.CLIENT)
 public abstract class ActionLogEntryBase implements Comparable<ActionLogEntryBase> {
 
-	private static final long ENTRY_MAX_AGE = 5000L; // TODO: Replace with configurable variable
+	private static final long ENTRY_MAX_AGE = 10000L; // TODO: Replace with configurable variable
 
 	public abstract String getMessage();
 
