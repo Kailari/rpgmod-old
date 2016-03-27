@@ -173,8 +173,6 @@ public class FoodStats extends net.minecraft.util.FoodStats {
 	 */
 	@Override
 	public void readNBT(NBTTagCompound compound) {
-		RPGMod.logger.info("Reading foodStats from NBT!");
-
 		// Compound is potentially NULL during first login
 		if (compound != null && compound.hasKey("foodLevel", 99)) {
 			this.foodLevel = compound.getInteger("foodLevel");
@@ -189,8 +187,6 @@ public class FoodStats extends net.minecraft.util.FoodStats {
 	 */
 	@Override
 	public void writeNBT(NBTTagCompound compound) {
-		RPGMod.logger.info("Writing foodStats to NBT!");
-
 		compound.setInteger("foodLevel", this.foodLevel);
 		compound.setInteger("foodTickTimer", this.foodTimer);
 		compound.setFloat("foodSaturationLevel", this.foodSaturationLevel);
