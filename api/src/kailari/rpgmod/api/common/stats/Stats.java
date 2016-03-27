@@ -130,6 +130,13 @@ public final class Stats {
 // Mining
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+	/*
+		Mining speed is calculated using:
+			bonus = genericBonus + toolBonus
+			mult  = genericMult  + toolMult
+			speed = (base + bonus) * (1.0f + mult);
+	 */
+
 	/**
 	 * Additive mining speed bonus. Uses internal attribute.
 	 * <br>
@@ -140,9 +147,9 @@ public final class Stats {
 	/**
 	 * Multiplier for mining speed. Uses internal attribute.
 	 * <br>
-	 * Defaults to 1.0. Lower bound is set to zero to prevent negative values. Upper bound is arbitrary.
+	 * Defaults to 0.0. Lower bound is set to zero to prevent negative values. Upper bound is arbitrary.
 	 */
-	public static final StatVariable MINING_SPEED_MULT = new StatVariable("stats.miningSpeedMult", 1.0f, 0.0f, 100.0f);
+	public static final StatVariable MINING_SPEED_MULT = new StatVariable("stats.miningSpeedMult", 0.0f, 0.0f, 100.0f);
 
 	/**
 	 * Additive mining speed bonus for pickaxes. Uses internal attribute.
@@ -156,7 +163,7 @@ public final class Stats {
 	 * <br>
 	 * Defaults to 1.0. Lower bound is set to zero to prevent negative values. Upper bound is arbitrary.
 	 */
-	public static final StatVariable MINING_SPEED_MULT_PICK = new StatVariable("stats.pickMiningSpeedMult", 1.0f, 0.0f, 100.0f);
+	public static final StatVariable MINING_SPEED_MULT_PICK = new StatVariable("stats.pickMiningSpeedMult", 0.0f, 0.0f, 100.0f);
 
 	/**
 	 * Additive mining speed bonus for axes. Uses internal attribute.
@@ -170,7 +177,7 @@ public final class Stats {
 	 * <br>
 	 * Defaults to 1.0. Lower bound is set to zero to prevent negative values. Upper bound is arbitrary.
 	 */
-	public static final StatVariable MINING_SPEED_MULT_AXE = new StatVariable("stats.axeMiningSpeedMult", 1.0f, 0.0f, 100.0f);
+	public static final StatVariable MINING_SPEED_MULT_AXE = new StatVariable("stats.axeMiningSpeedMult", 0.0f, 0.0f, 100.0f);
 
 	/**
 	 * Additive mining speed bonus for shovels. Uses internal attribute.
@@ -184,7 +191,7 @@ public final class Stats {
 	 * <br>
 	 * Defaults to 1.0. Lower bound is set to zero to prevent negative values. Upper bound is arbitrary.
 	 */
-	public static final StatVariable MINING_SPEED_MULT_SHOVEL = new StatVariable("stats.shovelMiningSpeedMult", 1.0f, 0.0f, 100.0f);
+	public static final StatVariable MINING_SPEED_MULT_SHOVEL = new StatVariable("stats.shovelMiningSpeedMult", 0.0f, 0.0f, 100.0f);
 
 	/**
 	 * Additive mining speed bonus for digging with hand. Uses internal attribute.
@@ -198,7 +205,7 @@ public final class Stats {
 	 * <br>
 	 * Defaults to 1.0. Lower bound is set to zero to prevent negative values. Upper bound is arbitrary.
 	 */
-	public static final StatVariable MINING_SPEED_MULT_HAND = new StatVariable("stats.handMiningSpeedMult", 1.0f, 0.0f, 100.0f);
+	public static final StatVariable MINING_SPEED_MULT_HAND = new StatVariable("stats.handMiningSpeedMult", 0.0f, 0.0f, 100.0f);
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

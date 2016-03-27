@@ -19,7 +19,7 @@ public class Attribute {
 
 	public int getXPRequiredForLevel(int level) {
 		// TODO: XP ramp -class for determining these
-		return 40 + Math.round(1.0f * (float) Math.pow(1.25, level));
+		return 10 + Math.round(100.0f * (float) Math.pow(1.51f, level));
 	}
 
 	public int getLevel(int xp) {

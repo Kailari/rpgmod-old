@@ -16,17 +16,17 @@ public class Attributes {
 	public static final Attribute STRENGTH = new Attribute("strength", "768cf7ac-9600-49b6-9ca4-d6d9d5cc04f1", true)
 			.addXPSource(Mining.DIGGING, 10)
 			.addXPSource(Mining.MINING, 40)
-			.addXPSource(Mining.SHOVELING, 20)
+			.addXPSource(Mining.SHOVELING, 5)
 			.addXPSource(Mining.WOODCUTTING, 30)
 			.addXPSource(Damage.DEALING_MELEE, 5)
 			.addXPSource(Damage.BLOCKING, 10)
 			.addXPSource(Farming.TILLING, 10)
 			.addXPSource(Forging.FORGING, 10)
 			.addXPSource(Farming.TILLING, 10)
-			.linkStat(Stats.MAX_HEALTH, new StepStatLink(5, 5, 1.0f))
+			.linkStat(Stats.MAX_HEALTH, new StepStatLink(5, 5, 0.1f))
 			.linkStat(Stats.ATTACK_DAMAGE, new StepStatLink(1, 1, 0.005f))
 			.linkStat(Stats.EXHAUSTION_MAX, new StepStatLink(1, 1, 0.05f))
-			.linkStat(Stats.MINING_SPEED_MULT, new StepStatLink(1, 1, 0.001f));
+			.linkStat(Stats.MINING_SPEED_MULT, new StepStatLink(1, 1, 0.01f));
 
 	public static final Attribute AGILITY = new Attribute("agility", "a2ae6e12-afe9-41e2-8572-0c3b1c37cdc0", true)
 			.addXPSource(Maneuvers.WALKING, 10)
