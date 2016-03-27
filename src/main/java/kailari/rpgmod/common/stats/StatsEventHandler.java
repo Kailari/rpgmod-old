@@ -633,7 +633,7 @@ public class StatsEventHandler {
 		}
 
 		// Apply the bonus and the multiplier
-		event.setNewSpeed((event.getNewSpeed() + bonus) * multiplier);
+		event.setNewSpeed((event.getNewSpeed() + bonus) * (1.0f + multiplier));
 	}
 
 
