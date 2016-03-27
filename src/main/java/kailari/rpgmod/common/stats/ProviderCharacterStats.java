@@ -5,12 +5,13 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumFacing;
 import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.common.capabilities.ICapabilitySerializable;
 
 /**
  * Capability provider for character stats
  */
-public class ProviderCharacterStats implements ICapabilitySerializable<NBTTagCompound> {
+public class ProviderCharacterStats implements ICapabilityProvider {
 	private final CharacterStats stats;
 
 	public ProviderCharacterStats(EntityPlayer player) {
@@ -26,23 +27,5 @@ public class ProviderCharacterStats implements ICapabilitySerializable<NBTTagCom
 	@SuppressWarnings("unchecked")
 	public <T> T getCapability(Capability<T> capability, EnumFacing facing) {
 		return capability == Capabilities.STATS ? (T) stats : null;
-	}
-
-	@Override
-	public NBTTagCompound serializeNBT() {
-		if (Capabilities.STATS != null) {
-			return (NBTTagCompound) Capabilities.STATS.getStorage()
-					.writeNBT(Capabilities.STATS, this.stats, null);
-		} else {
-			return new NBTTagCompound();
-		}
-	}
-
-	@Override
-	public void deserializeNBT(NBTTagCompound compound) {
-		if (Capabilities.STATS != null) {
-			Capabilities.STATS.getStorage()
-					.readNBT(Capabilities.STATS, this.stats, null, compound);
-		}
 	}
 }

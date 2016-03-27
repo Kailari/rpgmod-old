@@ -26,6 +26,6 @@ public class AttributeRegistry {
 	private static final Map<String, Attribute> attributeRegistry = new HashMap<String, Attribute>();
 
 	protected static void register(Attribute attribute) {
-		attributeRegistry.put(attribute.getNBTKey(), attribute);
+		attributeRegistry.put(attribute.getUnlocalizedName(), attribute);
 	}
 }

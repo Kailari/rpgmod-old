@@ -23,7 +23,7 @@ public class CapHelper {
 	 * Helper for determining if entity has a capability
 	 */
 	public static <T> boolean entityHasCapability(Entity entity, Capability<T> capability) {
-		return isValid(capability) && entity.hasCapability(capability, null);
+		return entity != null && isValid(capability) && entity.hasCapability(capability, null);
 	}
 
 	/**

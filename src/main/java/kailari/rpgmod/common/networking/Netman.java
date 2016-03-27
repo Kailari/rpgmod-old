@@ -1,10 +1,8 @@
 package kailari.rpgmod.common.networking;
 
 import kailari.rpgmod.RPGMod;
-import kailari.rpgmod.common.networking.messages.stats.attributes.SyncAttributeMessage;
-import kailari.rpgmod.common.networking.messages.stats.SyncCharacterStatsMessage;
-import kailari.rpgmod.common.networking.messages.stats.SyncStatVariableMessage;
-import kailari.rpgmod.common.networking.messages.stats.attributes.SyncCharacterAttributesMessage;
+import kailari.rpgmod.common.networking.messages.attributes.SyncAttributeMessage;
+import kailari.rpgmod.common.networking.messages.attributes.SyncCharacterAttributesMessage;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.fml.common.network.simpleimpl.SimpleNetworkWrapper;
 import net.minecraftforge.fml.relauncher.Side;
@@ -33,10 +31,6 @@ public class Netman {
 		int discriminator = -1;
 
 		// ----- channel_0 -----
-
-		// CharacterStats
-		channel_0.registerMessage(SyncStatVariableMessage.Handler.class, SyncStatVariableMessage.class, ++discriminator, Side.CLIENT);
-		channel_0.registerMessage(SyncCharacterStatsMessage.Handler.class, SyncCharacterStatsMessage.class, ++discriminator, Side.CLIENT);
 
 		// CharacterAttributes
 		channel_0.registerMessage(SyncAttributeMessage.Handler.class, SyncAttributeMessage.class, ++discriminator, Side.CLIENT);

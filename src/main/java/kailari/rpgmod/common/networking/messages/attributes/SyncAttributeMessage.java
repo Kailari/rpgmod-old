@@ -1,4 +1,4 @@
-package kailari.rpgmod.common.networking.messages.stats.attributes;
+package kailari.rpgmod.common.networking.messages.attributes;
 
 import io.netty.buffer.ByteBuf;
 import kailari.rpgmod.RPGMod;

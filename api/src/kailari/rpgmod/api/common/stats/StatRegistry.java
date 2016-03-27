@@ -15,20 +15,17 @@ public final class StatRegistry {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	/**
-	 * Searches for StatVariable registered with given key.
-	 *
-	 * @param key key to look for
-	 * @return Corresponding StatVariable if found, null otherwise.
-	 */
-	public static StatVariable get(String key) {
-		return variableRegistry.get(key);
-	}
-
-	/**
 	 * Bulk list of all registered StatVariables
 	 */
 	public static List<StatVariable> getAll() {
-		return new ArrayList<StatVariable>(variableRegistry.values());
+		return new ArrayList<StatVariable>(variableRegistry);
+	}
+
+	/**
+	 * List of stat variables that have vanilla attributes that need registering
+	 */
+	public static List<StatVariable> getVarsNeedingRegistering() {
+		return new ArrayList<StatVariable>(needRegistering);
 	}
 
 
@@ -36,12 +33,17 @@ public final class StatRegistry {
 // Internals
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	private static final Map<String, StatVariable> variableRegistry = new HashMap<String, StatVariable>();
+	private static final List<StatVariable> variableRegistry = new ArrayList<StatVariable>();
+	private static final List<StatVariable> needRegistering = new ArrayList<StatVariable>();
 
 	/**
 	 * Adds a StatVariable to the registry, called automatically in StatVariable constructor
 	 */
-	protected static void register(StatVariable variable) {
-		variableRegistry.put(variable.getNBTKey(), variable);
+	protected static void register(StatVariable variable, boolean registered) {
+		variableRegistry.add(variable);
+
+		if (!registered) {
+			needRegistering.add(variable);
+		}
 	}
 }

@@ -16,6 +16,8 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
+// TODO: More control over what is logged on-screen and what is not (no more "+1 str from jumping" spam)
+
 /**
  * Provides a action log to the lower right corner of the screen
  */

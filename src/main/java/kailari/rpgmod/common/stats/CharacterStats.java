@@ -4,17 +4,15 @@ import kailari.rpgmod.api.common.stats.ICharacterStats;
 import kailari.rpgmod.api.common.stats.StatRegistry;
 import kailari.rpgmod.api.common.stats.StatVariable;
 import kailari.rpgmod.api.common.stats.Stats;
-import kailari.rpgmod.common.networking.Netman;
-import kailari.rpgmod.common.networking.messages.stats.SyncCharacterStatsMessage;
-import kailari.rpgmod.common.networking.messages.stats.SyncStatVariableMessage;
+import net.minecraft.entity.ai.attributes.AttributeModifier;
+import net.minecraft.entity.ai.attributes.IAttribute;
+import net.minecraft.entity.ai.attributes.IAttributeInstance;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.math.BlockPos;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
 
-import java.util.*;
+import java.util.Random;
+import java.util.UUID;
 
 /**
  * Container for character stats.
@@ -56,16 +54,38 @@ public class CharacterStats implements ICharacterStats {
 
 	@Override
 	public float get(StatVariable variable) {
-		return this.variables.get(variable);
+		return (float) this.getAttribute(variable).getAttributeValue();
+	}
+
+	@Override
+	public float getBaseValue(StatVariable variable) {
+		return (float) this.getAttribute(variable).getBaseValue();
 	}
 
 	@Override
 	public void set(StatVariable variable, float value) {
-		this.variables.put(variable, value);
+		this.getAttribute(variable).setBaseValue(value);
+	}
 
-		if (!this.player.worldObj.isRemote) {
-			syncVariable(variable);
+	@Override
+	public void addModifier(StatVariable variable, AttributeModifier modifier) {
+		if (!this.getAttribute(variable).hasModifier(modifier)) {
+			this.getAttribute(variable).applyModifier(modifier);
 		}
+	}
+
+	@Override
+	public void removeModifier(StatVariable variable, AttributeModifier modifier) {
+		this.removeModifier(variable, modifier.getID());
+	}
+
+	@Override
+	public void removeModifier(StatVariable variable, UUID uuid) {
+		this.getAttribute(variable).removeModifier(uuid);
+	}
+
+	private IAttributeInstance getAttribute(StatVariable variable) {
+		return this.player.getEntityAttribute(variable.getTarget());
 	}
 
 
@@ -73,14 +93,14 @@ public class CharacterStats implements ICharacterStats {
 //	Instance
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	private final Map<StatVariable, Float> variables;
-
 	private final EntityPlayer player;
 
 	// Additional state variables
 	// TODO: Remove dependency to default implementation by creating some sort of "state container" inside ICharacterStats
 	private final Random missChanceRandom;
 	private boolean wasSprinting; // Records sprinting state so that we know when to add/remove modifiers
+
+	// XXX: This is used for attribute XP, yet it still resides in stats? Refactor, goddammit.
 	private BlockPos previousDistanceXPPos;
 
 	public CharacterStats(EntityPlayer player) {
@@ -88,49 +108,15 @@ public class CharacterStats implements ICharacterStats {
 
 		// Just initialize here, seed will be set during re-sync (and initial sync).
 		this.missChanceRandom = new Random();
+	}
 
-		// Initialize all stats
-		this.variables = new HashMap<StatVariable, Float>();
-		for (StatVariable var : StatRegistry.getAll()) {
-			this.variables.put(var, var.getDefaultValue());
+
+	public static void registerVanillaAttributes(EntityPlayer player) {
+		if (player != null) {
+			// Register all unregistered attributes
+			for (StatVariable variable : StatRegistry.getVarsNeedingRegistering()) {
+				player.getAttributeMap().registerAttribute(variable.getTarget());
+			}
 		}
-	}
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Networking
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	
-	private void syncVariable(StatVariable variable) {
-
-		// TODO: Don't sync before full sync has been done once
-
-		Netman.channel_0.sendTo(
-				new SyncStatVariableMessage(variable.getNBTKey(), this.get(variable)),
-				(EntityPlayerMP) this.player);
-	}
-
-	public void doFullSync() {
-		if (this.player.worldObj.isRemote) {
-			throw new IllegalStateException("doFullSync should NEVER get called on remote!");
-		}
-
-		// Get a new random seed
-		long seed = this.missChanceRandom.nextLong();
-		setSeeds(seed);
-
-		// Send all variables and new random seed to the client
-		Netman.channel_0.sendTo(
-				new SyncCharacterStatsMessage(this.variables.entrySet(), seed),
-				(EntityPlayerMP) this.player);
-	}
-
-	@SideOnly(Side.CLIENT)
-	public void receiveVariableData(StatVariable var, float value) {
-		this.variables.put(var, value);
-	}
-
-	public void setSeeds(long seed) {
-		this.missChanceRandom.setSeed(seed);
 	}
 }

@@ -1,4 +1,4 @@
-package kailari.rpgmod.common.networking.messages.stats.attributes;
+package kailari.rpgmod.common.networking.messages.attributes;
 
 import io.netty.buffer.ByteBuf;
 import kailari.rpgmod.RPGMod;
@@ -34,7 +34,7 @@ public class SyncCharacterAttributesMessage implements IMessage {
 
 		int index = 0;
 		for (Attribute attribute : AttributeRegistry.getAll()) {
-			this.nbtTags[index] = attribute.getNBTKey();
+			this.nbtTags[index] = attribute.getUnlocalizedName();
 			this.xp[index] = attrs.getXP(attribute);
 			this.bonus[index] = attrs.getBonus(attribute);
 

@@ -23,9 +23,14 @@ public class StepStatLink implements IStatLink {
 	}
 
 	@Override
+	public int getOperation() {
+		return 0; // Additive operation
+	}
+
+	@Override
 	public boolean changesAtLevel(int level) {
 		level -= this.firstStepLevel;
-		return level > 0 && level % this.stepSize == 0;
+		return level >= 0 && ((level % this.stepSize) == 0);
 	}
 
 	@Override

@@ -22,7 +22,12 @@ public class CapabilityCharacterStats {
 					@Override
 					public NBTBase writeNBT(Capability<ICharacterStats> capability, ICharacterStats instance, EnumFacing side) {
 						NBTTagCompound compound = new NBTTagCompound();
-						writeToNBT(compound, instance);
+
+						for (StatVariable var : StatRegistry.getAll()) {
+							compound.setFloat(
+									var.getTarget().getAttributeUnlocalizedName(),
+									instance.getBaseValue(var));
+						}
 
 						return compound;
 					}
@@ -30,7 +35,12 @@ public class CapabilityCharacterStats {
 					@Override
 					public void readNBT(Capability<ICharacterStats> capability, ICharacterStats instance, EnumFacing side, NBTBase base) {
 						NBTTagCompound compound = (NBTTagCompound) base;
-						readFromNBT(compound, instance);
+
+						for (StatVariable var : StatRegistry.getAll()) {
+							instance.set(
+									var,
+									compound.getFloat(var.getTarget().getAttributeUnlocalizedName()));
+						}
 					}
 				},
 				new Callable<ICharacterStats>() {
@@ -40,17 +50,5 @@ public class CapabilityCharacterStats {
 					}
 				}
 		);
-	}
-
-	protected static void writeToNBT(final NBTTagCompound compound, final ICharacterStats instance) {
-		for (StatVariable var : StatRegistry.getAll()) {
-			compound.setFloat(var.getNBTKey(), instance.get(var));
-		}
-	}
-
-	protected static void readFromNBT(NBTTagCompound compound, ICharacterStats instance) {
-		for (StatVariable var : StatRegistry.getAll()) {
-			instance.set(var, compound.getFloat(var.getNBTKey()));
-		}
 	}
 }

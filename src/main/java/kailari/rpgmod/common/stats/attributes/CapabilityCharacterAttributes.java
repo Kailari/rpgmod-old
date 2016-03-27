@@ -52,13 +52,13 @@ public class CapabilityCharacterAttributes {
 			attributeCompound.setInteger("bonus", instance.getBonus(attribute));
 
 			// Add the attribute tag to the main compound
-			compound.setTag(attribute.getNBTKey(), attributeCompound);
+			compound.setTag(attribute.getUnlocalizedName(), attributeCompound);
 		}
 	}
 
 	public static void readFromNBT(NBTTagCompound compound, ICharacterAttributes instance) {
 		for (Attribute attribute : AttributeRegistry.getAll()) {
-			NBTTagCompound attributeCompound = compound.getCompoundTag(attribute.getNBTKey());
+			NBTTagCompound attributeCompound = compound.getCompoundTag(attribute.getUnlocalizedName());
 
 			instance.set(
 					attribute,

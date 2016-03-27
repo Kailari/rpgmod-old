@@ -1,8 +1,5 @@
 package kailari.rpgmod.common.stats.attributes;
 
-import kailari.rpgmod.api.client.actionlog.ActionLog;
-import kailari.rpgmod.api.client.actionlog.entries.EntryAttributeExperience;
-import kailari.rpgmod.api.client.actionlog.entries.EntryAttributeLevel;
 import kailari.rpgmod.api.common.stats.ICharacterStats;
 import kailari.rpgmod.api.common.stats.StatVariable;
 import kailari.rpgmod.api.common.stats.attributes.Attribute;
@@ -11,10 +8,11 @@ import kailari.rpgmod.api.common.stats.attributes.ICharacterAttributes;
 import kailari.rpgmod.api.common.stats.attributes.link.IStatLink;
 import kailari.rpgmod.common.Capabilities;
 import kailari.rpgmod.common.networking.Netman;
-import kailari.rpgmod.common.networking.messages.stats.attributes.SyncAttributeMessage;
-import kailari.rpgmod.common.networking.messages.stats.attributes.SyncCharacterAttributesMessage;
+import kailari.rpgmod.common.networking.messages.attributes.SyncAttributeMessage;
+import kailari.rpgmod.common.networking.messages.attributes.SyncCharacterAttributesMessage;
 import kailari.rpgmod.util.CapHelper;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.ai.attributes.AttributeModifier;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraftforge.fml.relauncher.Side;
@@ -83,6 +81,8 @@ public class CharacterAttributes implements ICharacterAttributes {
 	private final Map<Attribute, AttributeInstance> attributes;
 	private final EntityPlayer player;
 
+	private boolean firstSyncDone = false; // Syncing too early causes shitload of errors and won't work.
+
 	public CharacterAttributes(EntityPlayer player) {
 		this.attributes = new HashMap<Attribute, AttributeInstance>();
 		this.player = player;
@@ -107,52 +107,44 @@ public class CharacterAttributes implements ICharacterAttributes {
 		updateLevel(
 				attribute,
 				CapHelper.getCapability(player, Capabilities.STATS),
-				newLevel + bonus,
-				instance.getLevel() + instance.getBonus());
+				newLevel + bonus);
 
 		instance.setLevel(newLevel);
 		instance.setXP(xp);
 		instance.setBonus(bonus);
 
-		// Update values in storage
-		//this.attributes.put(attribute, instance); XXX: This should be unnecessary
-
 		return true;
 	}
 
-	private void updateLevel(Attribute attribute, ICharacterStats stats, int newLevel, int oldLevel) {
-		// Don't change anything if level didn't change
-		if (newLevel == oldLevel) {
-			return;
-		}
-
+	private void updateLevel(Attribute attribute, ICharacterStats stats, int newLevel) {
 		// Apply all stat links
 		for (Map.Entry<StatVariable, IStatLink> entry : attribute.getLinkedStats().entrySet()) {
 
 			// Calculate how much the modifier should change
-			float delta = calculateModifierDeltaBetweenLevels(entry.getValue(), oldLevel, newLevel);
-			float value = stats.get(entry.getKey());
+			float amount = entry.getValue().getModifier(newLevel);
 
-			if (newLevel > oldLevel) {
-				value += delta;
-			} else {
-				value -= delta;
-			}
+			// Remove existing modifier
+			stats.removeModifier(entry.getKey(), attribute.getUUID());
 
-			// Update stat value
-			stats.set(entry.getKey(), value);
+			// Add new modifier
+			stats.addModifier(
+					entry.getKey(),
+					new AttributeModifier(
+							attribute.getUUID(),
+							attribute.getUnlocalizedName(),
+							amount,
+							entry.getValue().getOperation()
+					).setSaved(false));
+
+			// TODO: NBT I/O -> read from vanilla attribute tags (verify that it happens correctly)
 		}
 	}
 
 	private float calculateModifierDeltaBetweenLevels(IStatLink link, int from, int to) {
-		float total = 0.0f;
-		for (int level = Math.min(from, to); level <= Math.max(from, to); level++) {
-			if (link.changesAtLevel(level)) {
-				total += link.getModifier(level);
-			}
-		}
+		float min = link.getModifier(Math.min(from, to));
+		float max = link.getModifier(Math.max(from, to));
 
-		return total;
+		return max - min;
 	}
 
 
@@ -167,6 +159,8 @@ public class CharacterAttributes implements ICharacterAttributes {
 
 		// Send all variables and new random seed to the client
 		Netman.channel_0.sendTo(new SyncCharacterAttributesMessage(this), (EntityPlayerMP) this.player);
+
+		this.firstSyncDone = true;
 	}
 
 	public void syncAttribute(Attribute attribute) {
@@ -174,9 +168,13 @@ public class CharacterAttributes implements ICharacterAttributes {
 			throw new IllegalStateException("syncAttribute should NEVER get called on remote!");
 		}
 
+		if (!this.firstSyncDone) {
+			return;
+		}
+
 		Netman.channel_0.sendTo(
 				new SyncAttributeMessage(
-						attribute.getNBTKey(),
+						attribute.getUnlocalizedName(),
 						this.getXP(attribute),
 						this.getBonus(attribute)),
 				(EntityPlayerMP) this.player);
